@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(C:/dev/wiz8-ws/games/reference/**)",
+      "Write(C:/dev/wiz8-ws/games/reference/**)"
+    ]
+  }
+}

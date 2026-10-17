@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "rea": {
+      "command": "C:\\dev\\wiz8-ws\\Tools\\node\\node.exe",
+      "args": [
+        "C:\\dev\\wiz8-ws\\Tools\\rea\\node_modules\\rea-agents\\scripts\\rea.mjs",
+        "--mcp"
+      ],
+      "env": {
+        "JAVA_HOME": "C:\\dev\\wiz8-ws\\Tools\\jdk21",
+        "GHIDRA_INSTALL_DIR": "C:\\dev\\wiz8-ws\\Tools\\ghidra",
+        "REA_GHIDRA_STARTUP_TIMEOUT_MS": "1800000",
+        "REA_ANALYSIS_PROVIDER": "ghidra",
+        "PATH": "C:\\dev\\wiz8-ws\\Tools\\jdk21\\bin;C:\\dev\\wiz8-ws\\Tools\\node;C:\\Windows\\System32;C:\\Windows"
+      }
+    }
+  }
+}

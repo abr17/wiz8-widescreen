@@ -1,0 +1,3 @@
+# Patches to the decompilation contain lines with CRLF (the decompilation sources use CRLF):
+# git must not change their line endings, otherwise git apply fails.
+patches/*.patch -text

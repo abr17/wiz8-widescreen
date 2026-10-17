@@ -1,0 +1,55 @@
+# Not in git (kept only locally; where each one comes from - README.md "Repository map" and docs\building.md)
+
+# Portable tools (large, restored by downloading; copies of env.ps1/msvcenv.ps1 - scripts\build\toolchain\)
+/Tools/
+# Game copies (reference - pristine reference, work - test copy with the patch, ru - test copy with the Russian translation)
+/games/
+# Game source: local copy of a third-party decompilation + our changes (separate git repository;
+# all our changes - patches\decomp-msvc2022.patch)
+/decomp/
+# Third-party decompilation without a license: local only, for reference
+/ref/
+# Patch files made from the game's art (wide images etc.) and dgVoodoo - not put in git
+/assets/
+# Released builds (the zip exactly as it went out to players)
+/release/
+# Build output (everything is restored by scripts)
+/build/
+# The Ghidra database contains game code, not put in the repository
+/ghidra/
+# Binaries in the root and any game files
+/*.exe
+/*.dll
+*.CFG
+*.SLF
+
+# Python cache
+__pycache__/
+
+# Screenshots from test runs (scripts\play\hybrid_session.ps1)
+/docs/screens/tour/
+
+# Public screenshots (Reddit posts), not for git
+/screenshots/
+
+# Our changes to the third-party decompilation (contains its code, which has no licence): kept locally, not published
+/patches/
+
+# Old development screenshots with Russian game text: kept locally, not published
+/docs/screens/baseline/ingame-1024x768-dgvoodoo.jpg
+/docs/screens/baseline/ingame-2560x1600-stretched.jpg
+/docs/screens/phase3/ingame-borderless-mouse-fixed.jpg
+/docs/screens/phase3/ingame-dgvoodoo-fake-fullscreen.jpg
+/docs/screens/phase4/ingame-centered-horplus.jpg
+/docs/screens/phase4/portrait-click-centered.jpg
+/docs/screens/play/025013-vd10-a.jpg
+/docs/screens/play/025017-vd10-b.jpg
+/docs/screens/play/025126-vd15-a.jpg
+/docs/screens/play/025130-vd15-b.jpg
+/docs/screens/play/025238-vd20-a.jpg
+/docs/screens/play/025243-vd20-b.jpg
+/docs/screens/wideopt/audio-768.jpg
+/docs/screens/wideopt/general-768.jpg
+/docs/screens/wideopt/keyboard-768.jpg
+/docs/screens/wideopt/save-name-768.jpg
+/docs/screens/wideopt/save-wide-768.jpg
