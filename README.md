@@ -110,3 +110,10 @@ checklist. [docs/testing.md](docs/testing.md): test copies, automated play, pitf
   translation's own exe) are not. The Russian translation's `Data` works with the patch.
 
 Rules for AI agents working here: [CLAUDE.md](CLAUDE.md).
+
+## License
+
+The code and documentation in this repository are under the [MIT License](LICENSE). This does
+not cover Wizardry 8 itself, its files or art, the third-party decompilation of the game, or
+third-party components (MinHook has its own licence in `third_party/minhook`; dgVoodoo 2,
+included in the release package, is distributed under its author's terms).
