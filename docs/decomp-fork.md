@@ -1,16 +1,25 @@
 # The game source (`decomp\`)
 
-`decomp\` is a **separate local git repository**: a copy of the public Wizardry 8
-decompilation (https://github.com/agluszak/wizardry-8-decomp, commit `075cbd0`,
-2026-10-10; no licence file, so it is not redistributed) with the widescreen patch's
-changes on top. Both the shipped `wiz8hy.dll` and the internal `Wiz8Runtime.exe` are built
-from it. It is not in this repository's git (game code); this page is the tracked
-description of it (`decomp\FORK.md` points here).
+`decomp\` is a git submodule: [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp),
+a fork of the public Wizardry 8 decompilation
+([agluszak/wizardry-8-decomp](https://github.com/agluszak/wizardry-8-decomp)). Its branch
+`widescreen` is upstream commit `075cbd0` (2026-10-10) plus one commit with all the
+widescreen patch's changes; tag `wiz8-widescreen-1.0.0` is the source of the released
+`wiz8hy.dll` 1.0.0. Both `wiz8hy.dll` and the internal `Wiz8Runtime.exe` are built from it.
 
-The `README.md` inside `decomp\` is upstream's and describes upstream's workflow
-(VC6 in Docker/Wine, `uv run wiz8 ...`); that workflow is not used here.
+**Licensing:** upstream has no licence file; `src/sgp` is under Strategy First's non-commercial
+SFI Source Code License, and code derived from it is not offered under broader terms. Our
+changes in the fork follow the same terms; they are not under this repository's MIT licence.
 
-## History and tags
+The upstream `README.md` in the fork (after our note at the top) describes upstream's
+workflow (VC6 in Docker/Wine, `uv run wiz8 ...`); that workflow is not used here.
+
+## Development history (the author's private copy)
+
+The published fork has a single commit on top of upstream. The patch was developed in a
+private copy with its full history, described below; `docs\wide-canvas.md` and
+`docs\decomp-port.md` cite commits from that history by hash.
+
 
 * `720e1d8` - the import: upstream `075cbd0` copied as files (Windows line endings), without
   upstream's `docs/`, `evidence/`, `AGENTS.md`, `CLAUDE.md`, `.beads/`, `.claude/`.
@@ -21,13 +30,9 @@ The `README.md` inside `decomp\` is upstream's and describes upstream's workflow
   by hash.
 * tag `1.0.0` (`84a34ab`) - the source of the released `wiz8hy.dll` 1.0.0.
 
-All our changes as one file: `patches\decomp-msvc2022.patch`
-(`git -C decomp diff --binary 720e1d8 1.0.0`). It contains upstream code, so it is kept
-locally and is not in the public repository (`patches/` is gitignored). It applies to the import commit, not to a
-plain upstream checkout (line endings and removed folders differ). If `decomp\` were ever
-lost: clone upstream, check out `075cbd0`, convert line endings to CRLF, remove the folders
-listed above, commit, then `git apply --binary --ignore-whitespace` the patch and check the
-result builds. Keeping a copy of `decomp\` (it is small: ~25 MB with history) is far easier.
+The single public commit on `widescreen` has the same content as private tag `1.0.0`,
+with comments translated to English (the rebuilt `wiz8hy.dll` differs from the released one
+only in timestamps).
 
 ## What is ours
 

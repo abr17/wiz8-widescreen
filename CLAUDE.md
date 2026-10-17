@@ -26,8 +26,8 @@ Version 1.0.0 is released (2026-10-17); from now on only fixes based on bug repo
   Details - `docs\building.md`.
 - Copy `wiz8hy.dll` and `wiz8hy_hooks.txt` only together (otherwise a crash at start-up).
   The hybrid code has no CRT initialization: do not use `_stricmp`, `strcspn`, `_snwprintf`, `wcsstr`.
-- Game source - `decomp\` (separate git, described in `docs\decomp-fork.md`); after changes there,
-  regenerate `patches\decomp-msvc2022.patch` at release time.
+- Game source - `decomp\` (git submodule, fork abr17/wizardry-8-decomp, branch `widescreen`;
+  described in `docs\decomp-fork.md`). Its code is not MIT (upstream/SFI terms).
 - Test in the game yourself: `. scripts\play\hybrid_session.ps1; Start-Wiz8; ...; T 'name'; Quit-Wiz8`
   (`docs\testing.md`). Delete screenshots showing the desktop or personal information immediately.
 - Found addresses in the original: `docs\functions.md` (address, byte signature, how it was verified).

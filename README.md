@@ -8,6 +8,14 @@ display settings inside the game. Current release: **1.0.0** (2026-10-17), see
 
 The original `Wiz8.exe` is never modified.
 
+## Made with AI
+
+This patch was built with AI. The reverse engineering, code, installer and documentation
+were written by AI coding agents (Claude Code, using REA for reverse engineering), directed
+and tested by abr17. The missing widescreen art was outpainted with generative AI: original
+images are kept pixel-for-pixel, only the new side areas are generated, blended over a
+narrow strip at the original edge.
+
 ## Screenshots
 
 Each picture shows the same moment three times: the original game (4:3), then the patch at
@@ -41,12 +49,13 @@ Wiz8.exe (original)  ──loads──>  version.dll   (our proxy: src/, built w
 ```
 
 * The game's source code comes from a public **decompilation** of Wizardry 8
-  ([agluszak/wizardry-8-decomp](https://github.com/agluszak/wizardry-8-decomp)), which has no
-  licence. So **this repository does not include it, nor our changes to it** (they contain
-  its code): `wiz8hy.dll` is built from a private patch to that decompilation, and the release
-  zip ships the prebuilt `wiz8hy.dll`. Everything else here (`version.dll`, the installer,
-  the scripts) builds from this repository alone. Our local copy with the patch's changes is
-  `decomp/` (see [docs/decomp-fork.md](docs/decomp-fork.md)). It can also be built as a whole new exe,
+  ([agluszak/wizardry-8-decomp](https://github.com/agluszak/wizardry-8-decomp)). Our changes to
+  it are published as a fork, [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp)
+  (branch `widescreen`, tag `wiz8-widescreen-1.0.0`), included here as the `decomp/` submodule;
+  `wiz8hy.dll` is built from it (see [docs/decomp-fork.md](docs/decomp-fork.md)). That code is
+  **not** under this repository's MIT licence: upstream has no licence file, and part of it is
+  under Strategy First's non-commercial source licence (see the fork's README). The release
+  zip ships the prebuilt `wiz8hy.dll`. The game code can also be built as a whole new exe,
   `Wiz8Runtime.exe` (the "port"), an **internal** tool for testing; it is never shipped.
 * `wiz8hy.dll` contains only the functions we changed; everything else stays the original,
   tested game code. See [docs/hybrid.md](docs/hybrid.md).
@@ -65,9 +74,8 @@ Wiz8.exe (original)  ──loads──>  version.dll   (our proxy: src/, built w
 | `tools_src/setup/` | `Wiz8WideSetup.exe`, the installer (Win32 C++, en/ru/de/fr) | yes |
 | `dist/` | files shipped as-is: `wiz8ws.ini`, `wiz8wide.ini`, `README_*.txt` for players | yes |
 | `scripts/` | build, package, hybrid, test-play, art and analysis scripts, see [scripts/README.md](scripts/README.md) | yes |
-| `patches/decomp-msvc2022.patch` | all our changes to the decompilation (diff from our import commit to tag 1.0.0); contains decompilation code, so it is kept private | no |
 | `docs/` | documentation, see [docs/README.md](docs/README.md) | yes |
-| `decomp/` | game source: the decompilation + our changes; separate git repo, tag `1.0.0` | no |
+| `decomp/` | game source: the decompilation + our changes; git submodule [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp) at tag `wiz8-widescreen-1.0.0` (not MIT, see above) | yes (submodule) |
 | `assets/` | wide `.STI` art, `FALCON.STI`, dgVoodoo 2 files, laid out like the game folder | no |
 | `games/` | game copies: `reference` (pristine, read-only), `work` (test copy with the patch), `ru` (test copy with the Russian translation) | no |
 | `Tools/` | portable toolchain (llvm-mingw, CMake, portable MSVC, Ghidra, ...) | no |
@@ -81,8 +89,8 @@ stay local. [docs/building.md](docs/building.md) says where each one comes from.
 ## Quick start
 
 The workspace must be at **`C:\dev\wiz8-ws`** (several scripts and `.mcp.json` use that path),
-cloned with submodules (`git submodule update --init`). It needs `Tools\`, `decomp\` and
-`assets\` (not in git, see [docs/building.md](docs/building.md)).
+cloned with submodules (`git submodule update --init`, which also fetches `decomp\`). It needs
+`Tools\` and `assets\` (not in git, see [docs/building.md](docs/building.md)).
 
 ```powershell
 . .\Tools\env.ps1                                       # portable tools for this shell only
@@ -114,6 +122,7 @@ Rules for AI agents working here: [CLAUDE.md](CLAUDE.md).
 ## License
 
 The code and documentation in this repository are under the [MIT License](LICENSE). This does
-not cover Wizardry 8 itself, its files or art, the third-party decompilation of the game, or
+not cover Wizardry 8 itself, its files or art, the decompiled game code in the `decomp/`
+submodule (upstream's terms and Strategy First's non-commercial source licence apply there), or
 third-party components (MinHook has its own licence in `third_party/minhook`; dgVoodoo 2,
 included in the release package, is distributed under its author's terms).

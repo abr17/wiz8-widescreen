@@ -1,3 +1,7 @@
 [submodule "third_party/minhook"]
 	path = third_party/minhook
 	url = https://github.com/TsudaKageyu/minhook
+[submodule "decomp"]
+	path = decomp
+	url = https://github.com/abr17/wizardry-8-decomp.git
+	branch = widescreen

@@ -4,9 +4,6 @@
 /Tools/
 # Game copies (reference - pristine reference, work - test copy with the patch, ru - test copy with the Russian translation)
 /games/
-# Game source: local copy of a third-party decompilation + our changes (separate git repository;
-# all our changes - patches\decomp-msvc2022.patch)
-/decomp/
 # Third-party decompilation without a license: local only, for reference
 /ref/
 # Patch files made from the game's art (wide images etc.) and dgVoodoo - not put in git

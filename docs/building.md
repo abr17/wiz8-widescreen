@@ -121,17 +121,17 @@ against). Log: `build\vc2022\build.log`. It runs next to the original `sr.dll` a
 used for debugging, for the w8diff harness ([w8diff.md](w8diff.md)) and by older play-test
 helpers. Background: [decomp-port.md](decomp-port.md).
 
-## 6. `decomp\` (game source, not in git)
+## 6. `decomp\` (game source, git submodule)
 
-A separate git repository with its full history; tag `1.0.0` is the release source. See
-[decomp-fork.md](decomp-fork.md) for what is in it and how it relates to upstream. Our
-changes alone are kept as `patches\decomp-msvc2022.patch`, which is **not** in the public
-repository (it contains code of the unlicensed decompilation; the folder is gitignored and
-kept locally). Regenerate it whenever `decomp\` changes for a release:
+The git submodule [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp), a
+fork of the public decompilation: branch `widescreen`, tag `wiz8-widescreen-1.0.0` is the
+source of the released `wiz8hy.dll` 1.0.0. `git submodule update --init` fetches it. See
+[decomp-fork.md](decomp-fork.md) for what is in it and how it relates to upstream. Its code is
+not under this repository's MIT licence (upstream has no licence file; `src/sgp` is under
+Strategy First's non-commercial source licence).
 
-```powershell
-git -C decomp diff --binary --output=..\patches\decomp-msvc2022.patch 720e1d8 <decomp tag>
-```
+To change game code: commit in `decomp\` on `widescreen`, push the fork, then commit the new
+submodule pointer here. For a release, tag the fork (`wiz8-widescreen-<version>`).
 
 ## 7. Installer and package
 
@@ -165,8 +165,8 @@ some of the art: [scripts/README.md](../scripts/README.md).
 3. Update the version in `tools_src\setup\setup.manifest` and "Current release" in
    `README.md`; write `docs\releases\<version>.md` (contents, SHA-256 of the zip,
    `version.dll`, `wiz8hy.dll`, what was tested).
-4. Tag `decomp\` (`git -C decomp tag -a <version>`), regenerate the patch from that tag
-   (section 6), commit everything here, then `git tag -a <version>`.
+4. Tag and push `decomp\` (`git -C decomp tag -a wiz8-widescreen-<version>`), commit the
+   submodule pointer and everything else here, then `git tag -a <version>`.
 5. Copy `build\package\Wiz8Widescreen.zip` to `release\Wiz8Widescreen-<version>.zip` and
    make it read-only. Builds are not byte-reproducible (timestamps), so this copy is the
    reference for what was published.
