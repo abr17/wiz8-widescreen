@@ -125,11 +125,16 @@ def main():
     assert h0 == HEIGHT
     niche = [row[:NICHE_W] for row in rows]
     os.makedirs(a.out_dir, exist_ok=True)
+    # 16:9 (W = 856, gaps 108 wide) is quilted; 16:10 (gaps 64 wide) is cut out of it
+    # (2026-10-17, owner: one drawing for both widths). Each gap = the niche + its quilted
+    # continuation, so the narrower gap is the first 64 columns of the wider one.
+    rng = random.Random(a.seed)
+    wide_left = quilt(niche, 108, rng, rows if a.marble else None)
+    wide_right = quilt(niche, 108, rng, rows if a.marble else None)
     for W in (768, 856):
         ox = (W - 640) // 2
-        rng = random.Random(a.seed)
-        left = quilt(niche, ox, rng, rows if a.marble else None)
-        right = quilt(niche, ox, rng, rows if a.marble else None)
+        left = [row[:ox] for row in wide_left]
+        right = [row[:ox] for row in wide_right]
         canvas = [[(0, 0, 0)] * W for _ in range(480)]
         for y in range(HEIGHT):
             canvas[TOP + y][0:ox] = left[y]

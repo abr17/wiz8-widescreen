@@ -27,6 +27,31 @@ for k, n, i, a, b in sub:
 for c in cfg:
     if c['cut'][1] - c['cut'][0] == 97:
         c['period'] = 97  # the background pattern repeats exactly every 97 px (find_slice.py)
+# 1.0.1: at W = 856 these strips showed visible repeats (owner, 2026-10-17); wider source
+# areas, gradient removal (detrend), spread-out pieces and patch quilting fix them.
+NEW = {
+    # save/load rows: whole stone area inside the inner frame (x 92..344 minus a margin),
+    # one layout for all four variants, frame gradient removed from moved pieces
+    'S0F9_0_0': dict(src=[96, 342], guide=[0, 2], detrend=True, spread=True, patch=[48, 14]),
+    'S0F9_0_1': dict(src=[96, 342], guide=[0, 2], guide_part=0, detrend=True, spread=True, patch=[48, 14]),
+    'S0F9_0_2': dict(src=[96, 342], guide=[0, 2], detrend=True, spread=True, patch=[48, 14]),
+    'S0F9_0_3': dict(src=[96, 342], guide=[0, 2], guide_part=1, detrend=True, spread=True, patch=[48, 14]),
+    # bottom caption: inner area right of the dark left shadow
+    'S07E_0_6': dict(src=[62, 131], detrend=True, spread=True, patch=[32, 10]),
+    # traps panel: the right box (inner x 143..270, minus its left shadow); the big dark blob
+    # (x 180..200) stays only in the right part
+    'S1B1_0_1': dict(src=[152, 268], avoid=[[180, 200]], detrend=True, spread=True, patch=[28, 8]),
+    # magic panel: right of the light strip boundary at x 58, left of the dark band at 170
+    'S190_0_1': dict(src=[60, 166], detrend=True, spread=True, patch=[36, 10]),
+    # paging bar: inside the box (x 40..285) right of its darker left end; the V cracks and
+    # the thin vertical cracks are not repeated
+    'S0F3_0_0': dict(src=[75, 282], avoid=[[128, 152], [160, 167], [225, 249], [257, 264]],
+                     detrend=True, spread=True, patch=[28, 8]),
+    # save/load background: keep the 97-px tile, but never take the input box's side edges
+    'S0F7_0_0': dict(src=[65, 306]),
+}
+for c in cfg:
+    c.update(NEW.get(c['key'], {}))
 json.dump(cfg, open(r'C:\dev\wiz8-ws\build\stretch\config.json', 'w'), indent=1)
 
 
