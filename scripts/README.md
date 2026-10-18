@@ -11,6 +11,7 @@ Most scripts print usage in their header comment.
 |---|---|
 | `build-decomp.ps1 [-Clean]` | builds the internal port `build\vc2022\Wiz8Runtime.exe` (+ `.lib`s the hybrid links against) from `decomp\` with portable MSVC |
 | `make-hybrid-package.ps1` | builds the installer and assembles `build\package\Wiz8Widescreen\` + `.zip` |
+| `import-release.ps1 -Zip <zip> [-Force] [-Binaries]` | fills `assets\` (not in git) from a released zip; `-Binaries` also takes its prebuilt DLLs |
 | `toolchain\env.ps1`, `toolchain\msvcenv.ps1` | copies of `Tools\env.ps1` / `Tools\msvcenv.ps1` (session PATH for the portable tools) |
 | `toolchain\portable-msvc.py` | downloads portable MSVC + Windows SDK into `Tools\msvc` (public-domain script by Mārtiņš Možeiko) |
 
