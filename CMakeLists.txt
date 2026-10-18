@@ -7,7 +7,9 @@ if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
     message(FATAL_ERROR "A 32-bit (x86) build is required: Wiz8.exe is a 32-bit process.")
 endif()
 
-set(WIZ8WS_VERSION "0.1.0")
+# The patch version: the single line of VERSION (also used by the installer and the package).
+file(STRINGS "${CMAKE_SOURCE_DIR}/VERSION" WIZ8WS_VERSION LIMIT_COUNT 1)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/VERSION")
 
 # MinHook — hooking library (submodule third_party/minhook).
 add_library(minhook STATIC

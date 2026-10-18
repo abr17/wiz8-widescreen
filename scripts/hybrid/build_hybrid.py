@@ -29,13 +29,16 @@ from w8diff.symbols import Symbols, ROOT, SRC  # noqa: E402
 OUT = os.path.join(ROOT, 'build', 'hybrid')
 VC = os.path.join(ROOT, 'build', 'vc2022')
 INC = os.path.join(SRC, 'include')
+# the patch version (VERSION, one line) - shown in the main menu next to the game's v1.2.4
+with open(os.path.join(ROOT, 'VERSION'), encoding='ascii') as _f:
+    VERSION = _f.readline().strip()
 CXXFLAGS = ['/nologo', '/c', '/DWIN32', '/D_WINDOWS', '/Ob2', '/O2', '/MT', '/GS-', '/arch:IA32',
             '/Zc:wchar_t-', '/Zc:threadSafeInit-', '/permissive', '/source-charset:utf-8',
             '/bigobj', '/wd4430', '/wd4996', '/wd4068', '/wd4530', '/GR-', '/Gy',
             '/DNDEBUG', '/DNOMINMAX', '/DWIN32_LEAN_AND_MEAN', '/D_CRT_NONSTDC_NO_DEPRECATE',
             '/D_CRT_NON_CONFORMING_SWPRINTFS', '/D_CRT_NON_CONFORMING_WCSTOK',
             '/D_CRT_SECURE_NO_DEPRECATE', '/D_CRT_SECURE_NO_WARNINGS', '/D_USE_32BIT_TIME_T',
-            '/DWIZ8_HYBRID=1',
+            '/DWIZ8_HYBRID=1', '/DWIZ8WIDE_VERSION="%s"' % VERSION,
             '/FI' + os.path.join(INC, 'wiz8', 'compat', 'compiler.h'),
             '/FI' + os.path.join(INC, 'wiz8', 'compat', 'msvc2022.h'),
             '/I' + os.path.join(INC, 'wiz8', 'compat', 'modern_msvc'), '/I' + INC,

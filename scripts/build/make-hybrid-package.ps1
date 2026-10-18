@@ -1,4 +1,4 @@
-# Builds the hybrid package: build\package\Wiz8Widescreen\ and build\package\Wiz8Widescreen.zip.
+# Builds the hybrid package: build\package\Wiz8Widescreen\ and build\package\Wiz8Widescreen-<VERSION>.zip.
 #   pwsh -File scripts\build\make-hybrid-package.ps1
 # First build version.dll (build.ps1) and wiz8hy.dll (scripts\hybrid\build_hybrid.ps1 -Config
 # scripts\hybrid\transplant_wide.json). Package contents: Wiz8WideSetup.exe, files\ (what
@@ -39,7 +39,8 @@ foreach ($f in Get-ChildItem -LiteralPath "$root\dist" -Filter 'README_*.txt') {
     Copy-Item -LiteralPath $f.FullName -Destination $out
 }
 
-$zip = Join-Path $root 'build\package\Wiz8Widescreen.zip'
+$version = (Get-Content -LiteralPath "$root\VERSION" -TotalCount 1).Trim()
+$zip = Join-Path $root "build\package\Wiz8Widescreen-$version.zip"
 if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
 Compress-Archive -Path "$out\*" -DestinationPath $zip
 $size = [math]::Round((Get-Item -LiteralPath $zip).Length / 1MB, 1)

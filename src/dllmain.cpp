@@ -29,7 +29,7 @@ static BOOL CALLBACK DoRuntimeInit(PINIT_ONCE, PVOID, PVOID*)
     lstrcpyA(path, g_runtime.gameDir);
     lstrcatA(path, "wiz8ws.log");
     LogOpen(path);
-    Log("wiz8ws " WIZ8WS_VERSION " loaded as version.dll proxy");
+    Log("Wizardry 8 Widescreen " WIZ8WS_VERSION " (wiz8ws, loaded as version.dll proxy)");
     Log("game dir: %s", g_runtime.gameDir);
     Log("real version.dll: %s", g_runtime.proxyOk ? "loaded" : "FAILED");
 
