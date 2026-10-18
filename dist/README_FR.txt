@@ -23,6 +23,14 @@ Installation
 À la main : copiez le contenu du dossier « files » dans le dossier du jeu (celui
 de Wiz8.exe) en remplaçant les fichiers.
 
+Mise à jour
+-----------
+Lancez le nouveau Wiz8WideSetup.exe ; inutile de désinstaller l'ancienne version
+avant. Sur une version plus ancienne, le bouton indique « Mettre à jour » avec les
+deux numéros de version : les anciens fichiers sont retirés, les nouveaux
+installés, vos réglages conservés. Un installateur plus ancien sur une version
+plus récente propose « Rétrograder » et demande d'abord confirmation.
+
 Réglages
 --------
 Options - Vidéo, deuxième page : mode d'affichage (sans bordure / plein écran /

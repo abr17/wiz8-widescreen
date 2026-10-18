@@ -22,6 +22,14 @@ Installation
 Manuell: den Inhalt des Ordners "files" in den Spielordner (mit Wiz8.exe)
 kopieren und Dateien ersetzen.
 
+Aktualisieren
+-------------
+Die neue Wiz8WideSetup.exe starten; die alte Version muss nicht vorher entfernt
+werden. Über einer älteren Version heißt der Knopf "aktualisieren" mit beiden
+Versionsnummern: die alten Dateien werden entfernt, die neuen installiert, Ihre
+Einstellungen bleiben erhalten. Ein älterer Installer über einer neueren Version
+bietet "zurückstufen" an und fragt vorher nach.
+
 Einstellungen
 -------------
 Optionen - Video, zweite Seite: Anzeigemodus (randlos / Vollbild / Fenster) und

@@ -22,6 +22,13 @@ Install
 Manual install: copy the contents of the "files" folder into the game folder
 (where Wiz8.exe is), replacing files if asked.
 
+Update
+------
+Run the new Wiz8WideSetup.exe; there is no need to uninstall the old version
+first. Over an older version the button reads "Update" with both version
+numbers: the old files are removed, the new ones installed, your settings kept.
+An older installer over a newer version offers "Roll back" and asks first.
+
 Settings
 --------
 Options - Video, second page: display mode (borderless / fullscreen / window)
