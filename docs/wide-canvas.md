@@ -142,9 +142,14 @@ cells and uploads only those.
 Previously (and in the original) one screen pixel = one game unit, so at
 2560x1600 without the DLL the cursor was locked in the top-left corner. Now there are two steps:
 
-1. screen -> canvas: `canvas_x = screen_x * W / window_width`, `canvas_y = screen_y *
-   480 / window_height` (rounded down; window = client area of the game window, in
-   fullscreen mode this is the whole screen);
+1. screen -> canvas: `canvas_x = (screen_x - pic_x) * W / pic_width`, `canvas_y =
+   (screen_y - pic_y) * 480 / pic_height` (rounded down; picture = client area of the game
+   window, in borderless mode the whole screen; in fullscreen mode dgVoodoo
+   (`ScalingMode = stretched_ar`) keeps the monitor's mode and fits the chosen resolution
+   into it with black bars, so the picture is the centered rectangle of that resolution's
+   aspect ratio, `OutputRect` in Canvas.cpp). dgVoodoo's `CaptureMouse` is off: with it on,
+   dgVoodoo confines the cursor to the chosen resolution's size from the top-left corner
+   (1920x1080 of a 2560x1600 screen), so the right and bottom of the picture were unreachable;
 2. canvas -> game: `game_x = canvas_x - ox`, clamp to 0..639 / 0..479 - the same
    in polling (`PositionMouseCursor` -> `SGPMouseGetPos`), in events
    (`MouseHandler`) and for the wheel, so that hover and click always see the same point.

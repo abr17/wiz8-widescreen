@@ -90,7 +90,7 @@ powershell -File scripts\hybrid\build_hybrid.ps1 -Install   # + copy both files 
 The source is `decomp\` (the game code with our changes, [decomp-fork.md](decomp-fork.md)).
 `scripts\hybrid\transplant_wide.json` (the default config) lists which source files are
 compiled (`units`, `auto_units`) and which original functions are replaced (`transplant`,
-287 addresses in 1.0.0). Everything else in the DLL is bound to the original exe's own
+287 addresses in 1.0.x). Everything else in the DLL is bound to the original exe's own
 functions and data. Needs `Tools\msvc` and `build\vc2022\*.lib` from the port build.
 Details: [hybrid.md](hybrid.md) (Russian).
 
@@ -124,8 +124,8 @@ helpers. Background: [decomp-port.md](decomp-port.md).
 ## 6. `decomp\` (game source, git submodule)
 
 The git submodule [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp), a
-fork of the public decompilation: branch `widescreen`, tag `wiz8-widescreen-1.0.0` is the
-source of the released `wiz8hy.dll` 1.0.0. `git submodule update --init` fetches it. See
+fork of the public decompilation: branch `widescreen`, tags `wiz8-widescreen-<version>` are the
+sources of the released `wiz8hy.dll` (1.0.0, 1.0.1). `git submodule update --init` fetches it. See
 [decomp-fork.md](decomp-fork.md) for what is in it and how it relates to upstream. Its code is
 not under this repository's MIT licence (upstream has no licence file; `src/sgp` is under
 Strategy First's non-commercial source licence).
@@ -145,14 +145,29 @@ The package script builds the installer, then assembles `files\` from `build\ver
 everything in `assets\`, and adds `dist\README_*.txt`. The installer
 (`tools_src\setup\setup.cpp`) finds GOG/Steam installs, warns on an unknown exe, refuses to
 overwrite another mod's `version.dll`, backs up replaced files to `Wiz8Wide.backup\` and
-restores them on uninstall.
+restores them on uninstall. It records its version (from `VERSION`) in
+`Wiz8Wide.installed.txt` and, over an older version, offers "Update X -> Y" (over a newer one
+"Roll back X -> Y", after a question): a quiet uninstall of the old files, then the install,
+keeping `wiz8wide.ini` and `wiz8ws.ini`'s `Enabled=0`. Nothing is changed while a file of the
+folder is in use (the game running). The manifest rules for future versions (keep it readable
+by older installers; `*format=2` when uninstall must change) are in the comment at the top of
+`setup.cpp`.
 
 `assets\` holds the game-derived art (114 wide `.STI`), `Data\OPTIONS\FALCON.STI` (the exit
 screen, which the Russian translation's data lacks) and the dgVoodoo files, laid out like the
-game folder. It is not in git. If it is ever lost, restore it from a released zip in
-`release\`: copy only `files\Data\` and `files\DDraw.dll`, `D3DImm.dll`, `dgVoodoo.conf`
-(the DLLs and inis in `files\` are build outputs and would be stale). Scripts that regenerate
-some of the art: [scripts/README.md](../scripts/README.md).
+game folder. It is not in git (it is made from the game's art). Fill it from any released zip
+(from the release page, or `release\` locally):
+
+```powershell
+pwsh -File scripts\build\import-release.ps1 -Zip Wiz8Widescreen-1.0.1.zip              # assets\ only
+pwsh -File scripts\build\import-release.ps1 -Zip Wiz8Widescreen-1.0.1.zip -Binaries    # + prebuilt DLLs
+```
+
+It copies `files\Data\` and the dgVoodoo files into `assets\` and never overwrites a file that
+differs unless `-Force` is given. `-Binaries` also puts the release's `version.dll`,
+`wiz8hy.dll` + `wiz8hy_hooks.txt` into `build\`, for working on the installer, the art or the
+package without building the game code. Scripts that regenerate some of the art:
+[scripts/README.md](../scripts/README.md).
 
 ## 8. Release checklist
 
@@ -162,11 +177,14 @@ some of the art: [scripts/README.md](../scripts/README.md).
 2. Verify the package against the previous release: unzip both and compare the file lists
    and the hashes of the non-built files (`Data\`, dgVoodoo, READMEs); the hooks count in
    `wiz8hy_hooks.txt` should match `transplant_wide.json`.
-3. Update the version in `tools_src\setup\setup.manifest` and "Current release" in
-   `README.md`; write `docs\releases\<version>.md` (contents, SHA-256 of the zip,
-   `version.dll`, `wiz8hy.dll`, what was tested).
+3. Set the version in `VERSION` before building (the installer, `version.dll`'s log line,
+   the main menu line drawn by `wiz8hy.dll` and the zip name take it from there) and "Current release" in `README.md`; write
+   `docs\releases\<version>.md` (contents, SHA-256 of the zip, `version.dll`, `wiz8hy.dll`,
+   what was tested). Test the installer with `pwsh -File tools_src\setup\tests\test_all.ps1
+   -PreviousZip release\Wiz8Widescreen-<previous>.zip`: update from the previous release,
+   the game running, rollback, a failed copy, a manual install, uninstall byte for byte.
 4. Tag and push `decomp\` (`git -C decomp tag -a wiz8-widescreen-<version>`), commit the
-   submodule pointer and everything else here, then `git tag -a <version>`.
-5. Copy `build\package\Wiz8Widescreen.zip` to `release\Wiz8Widescreen-<version>.zip` and
+   submodule pointer and everything else here, then `git tag -a v<version>`; push both repositories with their tags.
+5. Copy `build\package\Wiz8Widescreen-<version>.zip` to `release\` and
    make it read-only. Builds are not byte-reproducible (timestamps), so this copy is the
    reference for what was published.

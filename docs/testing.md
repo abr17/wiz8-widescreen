@@ -20,7 +20,7 @@ For release testing, make throw-away clean copies (copy the GOG install, or the 
 1. The installer finds the game; installing works; an unknown exe gets the warning; a foreign
    `version.dll` is refused.
 2. The game starts wide (logs next to the exe: `wiz8ws.log` says `hooks installed: yes` and
-   `wiz8hy.dll: N functions replaced` with N = entries in `transplant_wide.json`, 287 in 1.0.0;
+   `wiz8hy.dll: N functions replaced` with N = entries in `transplant_wide.json`, 287 in 1.0.x;
    `wiz8wide.log` shows the canvas width `W=`; `wiz8hy.log` lists the hooks and, after a crash,
    the crash addresses: turn them into names with `scripts\hybrid\symbolize.py`).
 3. A walk through the screens: main menu, options (all pages), load/save list, game, journal,

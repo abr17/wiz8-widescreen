@@ -3,9 +3,9 @@
 `decomp\` is a git submodule: [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp),
 a fork of the public Wizardry 8 decompilation
 ([agluszak/wizardry-8-decomp](https://github.com/agluszak/wizardry-8-decomp)). Its branch
-`widescreen` is upstream commit `075cbd0` (2026-10-10) plus one commit with all the
-widescreen patch's changes; tag `wiz8-widescreen-1.0.0` is the source of the released
-`wiz8hy.dll` 1.0.0. Both `wiz8hy.dll` and the internal `Wiz8Runtime.exe` are built from it.
+`widescreen` is upstream commit `075cbd0` (2026-10-10) plus the widescreen patch's commits: one commit
+with everything of 1.0.0, then the 1.0.1 fixes. Tag `wiz8-widescreen-<version>` is the source of the
+released `wiz8hy.dll` of that version (1.0.0, 1.0.1). Both `wiz8hy.dll` and the internal `Wiz8Runtime.exe` are built from it.
 
 **Licensing:** upstream has no licence file; `src/sgp` is under Strategy First's non-commercial
 SFI Source Code License, and code derived from it is not offered under broader terms. Our
@@ -16,7 +16,7 @@ workflow (VC6 in Docker/Wine, `uv run wiz8 ...`); that workflow is not used here
 
 ## Development history (the author's private copy)
 
-The published fork has a single commit on top of upstream. The patch was developed in a
+Up to 1.0.0 the published fork has a single commit on top of upstream. The patch was developed in a
 private copy with its full history, described below; `docs\wide-canvas.md` and
 `docs\decomp-port.md` cite commits from that history by hash.
 

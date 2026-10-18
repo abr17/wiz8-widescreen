@@ -1,6 +1,6 @@
 # The hybrid: original Wiz8.exe + functions from the port
 
-This is how the released patch (1.0.0) works. The **original** Wiz8.exe (GOG/Steam 1.2.4) is launched,
+This is how the released patch (1.0.x) works. The **original** Wiz8.exe (GOG/Steam 1.2.4) is launched,
 and at startup `version.dll` replaces only the functions we changed (the wide
 canvas and everything drawn on it, display modes, settings in the options, draw distance,
 frame limit...). The code of these functions comes from the game sources in `decomp\` (the decompilation +
@@ -14,7 +14,7 @@ see [building.md](building.md)). The list is `scripts\hybrid\transplant_wide.jso
 
 * `units` and `auto_units` - files from `decomp\src` that are compiled in full;
 * `transplant` - addresses of original functions that are replaced by versions from `decomp`
-  (287 of them in 1.0.0);
+  (287 of them in 1.0.x);
 * `dll_owned_globals`, `glue` - global variables that live in the DLL (for example,
   enlarged arrays), and glue code.
 

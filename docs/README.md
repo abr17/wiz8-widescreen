@@ -15,6 +15,7 @@ design notes were written during development in Russian.
 
 | Release | Notes |
 |---|---|
+| 1.0.1 (2026-10-18) | [releases/1.0.1.md](releases/1.0.1.md): fixes after 1.0.0, installer updates in place |
 | 1.0.0 (2026-10-17) | [releases/1.0.0.md](releases/1.0.0.md): package contents, hashes, source tags, tests |
 
 ## Design reference (current, Russian)

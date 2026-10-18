@@ -3,8 +3,8 @@
 Native widescreen patch for **Wizardry 8** (GOG / Steam version 1.2.4, both ship the same
 `Wiz8.exe`). The 2D interface and the 3D view are drawn wide (16:9, 16:10, 3:2 and the
 original 4:3), with new wide loading screens, borderless / window / fullscreen modes and
-display settings inside the game. Current release: **1.0.0** (2026-10-17), see
-[docs/releases/1.0.0.md](docs/releases/1.0.0.md).
+display settings inside the game. Current release: **1.0.1** (2026-10-18), see
+[docs/releases/1.0.1.md](docs/releases/1.0.1.md).
 
 The original `Wiz8.exe` is never modified.
 
@@ -21,7 +21,7 @@ narrow strip at the original edge.
 Each picture shows the same moment three times: the original game (4:3), then the patch at
 16:10 and at 16:9.
 
-**Main menu**: the menu art is extended to the full width.
+**Main menu**: the menu art is extended to the full width; the corner shows the patch version.
 ![Main menu: original 4:3, patch 16:10, patch 16:9](docs/screenshots/compare-01-main-menu.jpg)
 
 **Options**: full-width option pages, with the patch's new settings (view distance; display mode and resolution on page 2).
@@ -45,13 +45,13 @@ Wiz8.exe (original)  ──loads──>  version.dll   (our proxy: src/, built w
                                      └─loads──>  wiz8hy.dll  (the "hybrid": game functions
                                                  rebuilt from decompiled source with our
                                                  widescreen changes; each one replaces the
-                                                 original function via a jmp patch; 287 in 1.0.0)
+                                                 original function via a jmp patch; 287 in 1.0.x)
 ```
 
 * The game's source code comes from a public **decompilation** of Wizardry 8
   ([agluszak/wizardry-8-decomp](https://github.com/agluszak/wizardry-8-decomp)). Our changes to
   it are published as a fork, [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp)
-  (branch `widescreen`, tag `wiz8-widescreen-1.0.0`), included here as the `decomp/` submodule;
+  (branch `widescreen`, tags `wiz8-widescreen-<version>`), included here as the `decomp/` submodule;
   `wiz8hy.dll` is built from it (see [docs/decomp-fork.md](docs/decomp-fork.md)). That code is
   **not** under this repository's MIT licence: upstream has no licence file, and part of it is
   under Strategy First's non-commercial source licence (see the fork's README). The release
@@ -75,12 +75,12 @@ Wiz8.exe (original)  ──loads──>  version.dll   (our proxy: src/, built w
 | `dist/` | files shipped as-is: `wiz8ws.ini`, `wiz8wide.ini`, `README_*.txt` for players | yes |
 | `scripts/` | build, package, hybrid, test-play, art and analysis scripts, see [scripts/README.md](scripts/README.md) | yes |
 | `docs/` | documentation, see [docs/README.md](docs/README.md) | yes |
-| `decomp/` | game source: the decompilation + our changes; git submodule [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp) at tag `wiz8-widescreen-1.0.0` (not MIT, see above) | yes (submodule) |
+| `decomp/` | game source: the decompilation + our changes; git submodule [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp) at tag `wiz8-widescreen-1.0.1` (not MIT, see above) | yes (submodule) |
 | `assets/` | wide `.STI` art, `FALCON.STI`, dgVoodoo 2 files, laid out like the game folder | no |
 | `games/` | game copies: `reference` (pristine, read-only), `work` (test copy with the patch), `ru` (test copy with the Russian translation) | no |
 | `Tools/` | portable toolchain (llvm-mingw, CMake, portable MSVC, Ghidra, ...) | no |
 | `build/` | build output (`version.dll`, `hybrid/`, `vc2022/` port build, `package/`) | no |
-| `release/` | released zips exactly as published (`Wiz8Widescreen-1.0.0.zip`) | no |
+| `release/` | released zips exactly as published (`Wiz8Widescreen-<version>.zip`) | no |
 | `ghidra/`, `ref/` | Ghidra project and binaries for analysis; clone of the upstream decompilation (reference) | no |
 
 The folders outside git contain game code, game-derived art or large downloads, so they
@@ -90,14 +90,15 @@ stay local. [docs/building.md](docs/building.md) says where each one comes from.
 
 The workspace must be at **`C:\dev\wiz8-ws`** (several scripts and `.mcp.json` use that path),
 cloned with submodules (`git submodule update --init`, which also fetches `decomp\`). It needs
-`Tools\` and `assets\` (not in git, see [docs/building.md](docs/building.md)).
+`Tools\` and `assets\` (not in git, see [docs/building.md](docs/building.md)); `assets\` comes from a
+release zip in one command: `pwsh -File scripts\build\import-release.ps1 -Zip <Wiz8Widescreen-x.y.z.zip>`.
 
 ```powershell
 . .\Tools\env.ps1                                       # portable tools for this shell only
 .\build.ps1                                             # build\version.dll
 powershell -File scripts\build\build-decomp.ps1         # once: port build, makes the .lib files the hybrid links against
 powershell -File scripts\hybrid\build_hybrid.ps1        # build\hybrid\wiz8hy.dll + wiz8hy_hooks.txt
-pwsh -File scripts\build\make-hybrid-package.ps1        # build\package\Wiz8Widescreen.zip
+pwsh -File scripts\build\make-hybrid-package.ps1        # build\package\Wiz8Widescreen-<VERSION>.zip
 ```
 
 To try a change in the game, install into the test copy (`.\build.ps1 -Install`,

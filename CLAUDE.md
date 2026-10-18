@@ -1,7 +1,7 @@
 # Wiz8 widescreen patch — rules for AI agents
 
 First read `README.md` (what this is and where things live), then whatever you need from `docs/README.md`.
-Version 1.0.0 is released (2026-10-17); from now on only fixes based on bug reports.
+Version 1.0.1 is released (2026-10-18, after 1.0.0 on 2026-10-17); from now on only fixes based on bug reports. Version number: `VERSION`.
 
 ## Workspace
 - **Everything lives only inside C:\dev\wiz8-ws** (tools, game copies, builds, Ghidra databases, temporary
