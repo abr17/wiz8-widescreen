@@ -5,14 +5,19 @@
 // windows, waiting for threads — it is easy to get a hang. So only the bare
 // minimum happens here:
 //   1) load the real version.dll so the game works;
-//   2) read Enabled from the ini;
-//   3) hook CreateWindowExA.
-// Everything else (log, exe hash) happens in EnsureRuntime() when the first window is created.
+//   2) read the ini;
+//   3) with [Debug] Diagnostics=1, move the previous session's logs into Wiz8Logs\ (file moves only);
+//   4) hook CreateWindowExA and patch the game (InstallGameHooks: with the hybrid only the
+//      WinMain hook that loads wiz8hy.dll).
+// Everything else (log, exe hash, diagnostics) happens in EnsureRuntime() when the first
+// window is created.
 
 #include <windows.h>
 
 #include <MinHook.h>
 
+#include "diagnostics.h"
+#include "filenames.h"
 #include "hooks_window.h"
 #include "log.h"
 #include "proxy_version.h"
@@ -54,12 +59,27 @@ static BOOL CALLBACK DoRuntimeInit(PINIT_ONCE, PVOID, PVOID*)
     if (g_runtime.config.diffHarness) Log("diff harness: RenderFrame hook %s", r.diff ? "installed" : "FAILED");
 
     if (g_runtime.config.hybrid) Log("hybrid: WinMain hook %s, wiz8hy.dll: %d functions replaced (-1 = not loaded)", r.hybrid ? "installed" : "FAILED", g_hybridHooks);
+    if (r.fileNames >= 0) {
+        Log("file names: system code page is UTF-8; %d file imports redirected, game names read as code page %u",
+            r.fileNames, FileNameCodePage());
+    } else if (r.fileNames == -1) {
+        Log("file names: system code page %u, nothing to do", GetACP());
+    } else {
+        Log("file names: off (Utf8FileNames=0 or no hybrid)");
+    }
 
     // Project rule: on an unknown exe version we change nothing, we only pass calls through.
     g_runtime.active = g_runtime.config.enabled && g_runtime.exe != ExeVersion::Unknown;
     if (!g_runtime.active) {
         Log("patch inactive (%s); passing everything through unchanged",
             g_runtime.config.enabled ? "unknown exe" : "disabled in ini");
+    }
+    // Exit trace, crash minidumps, memory heartbeat (diagnostics.h), with [Debug] Diagnostics=1.
+    // They only observe, so they run on an unknown exe too (the game's own globals are then not read).
+    if (g_runtime.config.diagnostics) {
+        DiagStart();
+    } else {
+        Log("diagnostics: off ([Debug] Diagnostics=0)");
     }
     return TRUE;
 }
@@ -136,6 +156,9 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
         lstrcpyA(ini, g_runtime.gameDir);
         lstrcatA(ini, "wiz8ws.ini");
         g_runtime.config = LoadConfig(ini);
+
+        // Keep the previous session's logs (only file moves, safe in DllMain).
+        if (g_runtime.config.enabled && g_runtime.config.diagnostics) DiagRotateLogs(g_runtime.gameDir);
 
         if (g_runtime.config.enabled && MH_Initialize() == MH_OK) {
             g_runtime.hooksInstalled = InstallWindowHooks();

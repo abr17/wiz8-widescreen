@@ -17,6 +17,7 @@ struct HookReport {
     bool horPlusThumbs = false; // Hor+: save thumbnails without distortion
     bool diff = false;          // comparison harness against the port (RenderFrame hook)
     bool hybrid = false;        // hybrid: WinMain hook for wiz8hy.dll
+    int fileNames = -2;         // UTF-8 file names (filenames.h): -2 off, -1 not needed, else imports redirected
 };
 
 // Checks that the code in memory really is GOG 1.2.4 (header + bytes at the hook points).

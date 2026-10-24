@@ -7,6 +7,7 @@
 
 #include <windows.h>
 
+#include "filenames.h"
 #include "patch.h"
 #include "runtime.h"
 
@@ -25,6 +26,7 @@ static int WINAPI HookWinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int sho
     typedef int(__cdecl * InstallFn)(const char*);
     InstallFn install = dll ? (InstallFn)GetProcAddress(dll, "HybridInstall") : nullptr;
     g_hybridHooks = install ? install(g_runtime.gameDir) : -1;
+    if (g_runtime.config.utf8FileNames) g_runtime.game.fileNames = InstallFileNameHooks(dll);
     return g_origWinMain(inst, prev, cmd, show);
 }
 

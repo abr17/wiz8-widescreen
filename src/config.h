@@ -14,7 +14,9 @@ struct Config {
     bool dpiAware = true;         // [Display] DpiAware — no blurring at 125%/150% scaling
     bool logWindowCalls = true;   // [Debug] LogWindowCalls — log window parameters
     bool diffHarness = false;     // [Debug] DiffHarness — comparison harness against the port (w8diff.dll)
+    bool diagnostics = false;     // [Debug] Diagnostics — exit/crash trace, Wiz8Logs\ (diagnostics.h)
     bool hybrid = false;          // [Hybrid] Enabled — port functions from wiz8hy.dll (trial)
+    bool utf8FileNames = true;    // [General] Utf8FileNames — game file names on UTF-8 Windows (filenames.h)
 };
 
 // Reads the ini. Safe to call even from DllMain (kernel32 only).
