@@ -16,6 +16,7 @@ Start with the repository [README](../README.md). All documents are in English.
 
 | Release | Notes |
 |---|---|
+| 1.0.2 (2026-10-24) | [releases/1.0.2.md](releases/1.0.2.md): frame rate limit page, experimental switches, memory leak and party death fixes, one installer with a diagnostics checkbox |
 | 1.0.1 (2026-10-18) | [releases/1.0.1.md](releases/1.0.1.md): fixes after 1.0.0, installer updates in place |
 | 1.0.0 (2026-10-17) | [releases/1.0.0.md](releases/1.0.0.md): package contents, hashes, source tags, tests |
 

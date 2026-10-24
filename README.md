@@ -3,8 +3,8 @@
 Native widescreen patch for **Wizardry 8** (GOG / Steam version 1.2.4, both ship the same
 `Wiz8.exe`). The 2D interface and the 3D view are drawn wide (16:9, 16:10, 3:2 and the
 original 4:3), with new wide loading screens, borderless / window / fullscreen modes and
-display settings inside the game. Current release: **1.0.1** (2026-10-18), see
-[docs/releases/1.0.1.md](docs/releases/1.0.1.md).
+display settings inside the game. Current release: **1.0.2** (2026-10-24), see
+[docs/releases/1.0.2.md](docs/releases/1.0.2.md).
 
 The original `Wiz8.exe` is never modified.
 
@@ -85,7 +85,7 @@ Wiz8.exe (original)  ──loads──>  version.dll   (our proxy: src/, built w
 | `dist/` | files shipped as-is: `wiz8ws.ini`, `wiz8wide.ini`, `README_*.txt` for players | yes |
 | `scripts/` | build, package, hybrid, test-play, art and analysis scripts, see [scripts/README.md](scripts/README.md) | yes |
 | `docs/` | documentation, see [docs/README.md](docs/README.md) | yes |
-| `decomp/` | game source: the decompilation + our changes; git submodule [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp) at tag `wiz8-widescreen-1.0.1` (not MIT, see above) | yes (submodule) |
+| `decomp/` | game source: the decompilation + our changes; git submodule [abr17/wizardry-8-decomp](https://github.com/abr17/wizardry-8-decomp) at tag `wiz8-widescreen-1.0.2` (not MIT, see above) | yes (submodule) |
 | `assets/` | wide `.STI` art, `FALCON.STI`, dgVoodoo 2 files, laid out like the game folder | no |
 | `games/` | game copies: `reference` (pristine, read-only), `work` (test copy with the patch), `ru` (test copy with the Russian translation) | no |
 | `Tools/` | portable toolchain (llvm-mingw, CMake, portable MSVC, Ghidra, ...) | no |
