@@ -6,7 +6,9 @@
 #   -Force     overwrite files already in assets\ (default: keep them and report differences)
 #   -Binaries  also copy the prebuilt version.dll to build\ and wiz8hy.dll + wiz8hy_hooks.txt
 #              to build\hybrid\, for working on the installer, the art or the package without
-#              building the game code (they are build outputs: a real build replaces them)
+#              building the game code (they are build outputs: a real build replaces them);
+#              removes build\hybrid\GUARD_FAILED left by a failed build (the released pair is good)
+#              and the local build's wiz8hy.map (a release has none)
 param([Parameter(Mandatory)][string]$Zip, [switch]$Force, [switch]$Binaries)
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
@@ -47,6 +49,14 @@ if ($Binaries) {
     # the DLL and its hook list always travel together (a mismatch crashes the game at start-up)
     Copy-Item -LiteralPath (Join-Path $files 'wiz8hy.dll') -Destination (Join-Path $root 'build\hybrid\wiz8hy.dll') -Force
     Copy-Item -LiteralPath (Join-Path $files 'wiz8hy_hooks.txt') -Destination (Join-Path $root 'build\hybrid\wiz8hy_hooks.txt') -Force
+    # a failed or interrupted hybrid build left this marker (the package script refuses while it
+    # exists); the pair in build\hybrid is now the released one
+    $guardFailed = Join-Path $root 'build\hybrid\GUARD_FAILED'
+    if (Test-Path -LiteralPath $guardFailed) { Remove-Item -LiteralPath $guardFailed -Force; 'removed build\hybrid\GUARD_FAILED' }
+    # a release has no map: the local build's map would make symbolize.py name the released
+    # DLL's crash addresses wrongly
+    $map = Join-Path $root 'build\hybrid\wiz8hy.map'
+    if (Test-Path -LiteralPath $map) { Remove-Item -LiteralPath $map -Force; 'removed build\hybrid\wiz8hy.map (it belonged to the local build)' }
     'binaries: build\version.dll, build\hybrid\wiz8hy.dll + wiz8hy_hooks.txt (prebuilt from the release)'
 }
 Remove-Item -LiteralPath $tmp -Recurse -Force

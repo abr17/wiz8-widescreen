@@ -7,6 +7,11 @@ param([string]$Save = 'Before Bayjin', [string]$ViewDistance = '2.0', [int]$Wait
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $work = Join-Path $root 'games\work'
+# the last hybrid build failed (a compile, link or binding guard error) or has not finished:
+# build\hybrid holds an older pair than the sources
+if (-not $Off -and (Test-Path -LiteralPath (Join-Path $root 'build\hybrid\GUARD_FAILED'))) {
+    throw "build\hybrid\GUARD_FAILED exists: the last wiz8hy.dll build failed or has not finished (see that file and docs\hybrid.md, 'How wiz8hy.dll is built'); fix it and rebuild"
+}
 
 function Set-Ini([string]$path, [string]$section, [string]$key, [string]$value) {
     $lines = @(); if (Test-Path $path) { $lines = Get-Content $path }
