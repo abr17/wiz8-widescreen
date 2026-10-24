@@ -1,4 +1,4 @@
-# Game control for automated tests: launch to the menu, clicks in 640x480 coordinates,
+﻿# Game control for automated tests: launch to the menu, clicks in 640x480 coordinates,
 # loading the first save, quitting.
 #   . C:\dev\wiz8-ws\scripts\play\game.ps1
 #   Start-Wiz8; Load-FirstSave; Shot 'phase1'; Quit-Wiz8
@@ -19,7 +19,10 @@ $script:Shell = New-Object -ComObject WScript.Shell
 
 function Focus-Wiz8 { $p = Get-Process $script:Exe -ErrorAction SilentlyContinue; if ($p) { [void]$script:Shell.AppActivate($p.Id); Start-Sleep -Milliseconds 700 }; [bool]$p }
 function Start-Wiz8([string[]]$Args = @()) {
-    $p = Start-Process "$script:GameDir\$($script:Exe).exe" -WorkingDirectory $script:GameDir -ArgumentList $Args -PassThru
+    # no -ArgumentList when empty: Windows PowerShell 5.1 (e.g. inside Windows Sandbox) rejects an empty one
+    $start = @{ FilePath = "$script:GameDir\$($script:Exe).exe"; WorkingDirectory = $script:GameDir; PassThru = $true }
+    if ($Args) { $start.ArgumentList = $Args }
+    $p = Start-Process @start
     Start-Sleep 10; Focus-Wiz8 | Out-Null
     if (Test-Wiz8Foreground) { $script:Shell.SendKeys('{ESC}') }   # one Esc skips the intro
     Start-Sleep 12; Focus-Wiz8 | Out-Null

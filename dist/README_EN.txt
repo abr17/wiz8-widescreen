@@ -28,12 +28,35 @@ Run the new Wiz8WideSetup.exe; there is no need to uninstall the old version
 first. Over an older version the button reads "Update" with both version
 numbers: the old files are removed, the new ones installed, your settings kept.
 An older installer over a newer version offers "Roll back" and asks first.
+A version installed with Wiz8WideSetup.exe should be updated with it too, not by
+copying "files" over it (its uninstall would then miss the new files).
 
 Settings
 --------
 Options - Video, second page: display mode (borderless / fullscreen / window)
 and resolution. View distance and monster speed are on the same screens.
 Changes apply at once; if the aspect ratio changes, restart the game.
+Third page: frame rate limit (30 / 60 / 120 or Unlimited, default 60). The 2001 engine
+moves the party a step per frame: at higher rates tall ledges and stairs get harder to
+climb; if a doorstep will not let you in, take a run-up or set 30.
+After an update from 1.0.0 or 1.0.1 the old limit of 120 stays until you change it
+on this page.
+
+Options - Experimental (the USB drive in the computer picture; with English or
+Russian game text also a 5th button): features that are off by default and may
+change or be removed in a later version. There are four switches:
+- "Animated Main Menu": an animated main menu background.
+- "Map Mouse Controls": on the map the mouse wheel zooms and dragging with the
+  left button moves the map; a single click no longer zooms in, a double click
+  does.
+- "Original Bug Fixes": fixes of the original game's own bugs. For now: the
+  silent crash after about 20 loads of Arnika Road, Trynton and a few other
+  places in one session, the crash when the window is closed with Alt+F4, and a
+  small memory leak on every load.
+- "Alternative Game Tick": at any frame rate the party moves, and stairs and the
+  Umpani doorsteps are climbed, as in the original at 30 fps; monsters, lights,
+  damage numbers and sound fades no longer speed up or slow down with the frame
+  rate.
 
 To switch the patch off without removing it: in wiz8ws.ini, section [General], set Enabled=0.
 
@@ -50,3 +73,10 @@ Notes
 - If the game folder already contains a version.dll from another mod, the
   installer will not overwrite it.
 - Saved games are not affected and stay compatible with the original game.
+- If the game closes by itself without an error: run Wiz8WideSetup.exe again,
+  tick "Diagnostics mode (for bug reports)" (under the status lines, above the
+  buttons) and press "Reinstall"; your settings are kept. The same setting is
+  Diagnostics=1 in wiz8ws.ini, section [Debug]; an update keeps it as it is.
+  Play until it happens again. Then send wiz8ws.log,
+  wiz8hy.log, wiz8wide.log and the whole Wiz8Logs folder (all in the game folder)
+  with your report.

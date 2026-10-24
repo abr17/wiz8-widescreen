@@ -90,9 +90,9 @@ powershell -File scripts\hybrid\build_hybrid.ps1 -Install   # + copy both files 
 The source is `decomp\` (the game code with our changes, [decomp-fork.md](decomp-fork.md)).
 `scripts\hybrid\transplant_wide.json` (the default config) lists which source files are
 compiled (`units`, `auto_units`) and which original functions are replaced (`transplant`,
-287 addresses in 1.0.x). Everything else in the DLL is bound to the original exe's own
+289 addresses in 1.0.2, 287 in 1.0.0-1.0.1). Everything else in the DLL is bound to the original exe's own
 functions and data. Needs `Tools\msvc` and `build\vc2022\*.lib` from the port build.
-Details: [hybrid.md](hybrid.md) (Russian).
+Details: [hybrid.md](hybrid.md).
 
 ### Changing game code
 
@@ -105,6 +105,9 @@ Details: [hybrid.md](hybrid.md) (Russian).
    `wiz8hy.dll`**: the build succeeds and the game keeps running the original function.
    New functions that have no original address are pulled in automatically when a listed
    function calls them.
+   Original variables keep their `// GLOBAL: WIZ8 0x<address>` annotation directly above the
+   declaration: the build binds them to the original's variable and fails ("binding guard")
+   when one would get a second copy inside the DLL ([hybrid.md](hybrid.md), "Game variables").
 4. Build with `-Install`, run the game, check `wiz8ws.log` (`wiz8hy.dll: N functions
    replaced`, N = number of `transplant` entries) and test ([testing.md](testing.md)).
 5. Changes in `src\` (the loader) need only `.\build.ps1 -Install`.
@@ -148,19 +151,29 @@ overwrite another mod's `version.dll`, backs up replaced files to `Wiz8Wide.back
 restores them on uninstall. It records its version (from `VERSION`) in
 `Wiz8Wide.installed.txt` and, over an older version, offers "Update X -> Y" (over a newer one
 "Roll back X -> Y", after a question): a quiet uninstall of the old files, then the install,
-keeping `wiz8wide.ini` and `wiz8ws.ini`'s `Enabled=0`. Nothing is changed while a file of the
-folder is in use (the game running). The manifest rules for future versions (keep it readable
+keeping `wiz8wide.ini` and `wiz8ws.ini`'s `Enabled=0`. Its "Diagnostics mode (for bug reports)"
+checkbox sets `[Debug] Diagnostics` of `wiz8ws.ini`: off on a fresh install, over an install it
+shows the current value and the install writes whatever the player leaves it at (without the
+window: `--install "<folder>" [--diagnostics|--no-diagnostics]`, neither = keep). So there is one
+package, with `Diagnostics=0` in `files\wiz8ws.ini`. Nothing is changed while a file of the
+folder is in use (the game running). A full uninstall also removes the logs the patch wrote,
+including `Wiz8Logs\` of the diagnostics ([loader.md](loader.md)); an update keeps `Wiz8Logs\`. The manifest rules for future versions (keep it readable
 by older installers; `*format=2` when uninstall must change) are in the comment at the top of
 `setup.cpp`.
 
-`assets\` holds the game-derived art (114 wide `.STI`), `Data\OPTIONS\FALCON.STI` (the exit
-screen, which the Russian translation's data lacks) and the dgVoodoo files, laid out like the
-game folder. It is not in git (it is made from the game's art). Fill it from any released zip
-(from the release page, or `release\` locally):
+`assets\` holds the game-derived art (121 wide `.STI`, 5 of them the Options art of the
+experimental category), `Data\OPTIONS\FALCON.STI` (the exit screen, which the Russian
+translation's data lacks), the animated menu video `Data\WIDE\MENU_ANIM.AVI`
+([experimental.md](experimental.md)) and the dgVoodoo files, laid out like the game folder. It is not in git (it is made from the game's art). Fill it from a released zip
+(from the release page, or `release\` locally), 1.0.2 or later. Older zips do not give a
+complete `assets\`: the 1.0.1 zip lacks 8 files (`Data\WIDE\STRETCH\S0F9_0_4_768.STI` and
+`S0F9_0_4_856.STI`, the 5 experimental Options `.STI` and `MENU_ANIM.AVI`) and has the old
+AI-painted `Data\WIDE\WIDEFRAME_768.STI` and `WIDEFRAME_856.STI` (1.0.2 has the native marble
+ones). The package script stops only when one of the 6 experimental files is missing:
 
 ```powershell
-pwsh -File scripts\build\import-release.ps1 -Zip Wiz8Widescreen-1.0.1.zip              # assets\ only
-pwsh -File scripts\build\import-release.ps1 -Zip Wiz8Widescreen-1.0.1.zip -Binaries    # + prebuilt DLLs
+pwsh -File scripts\build\import-release.ps1 -Zip Wiz8Widescreen-1.0.2.zip              # assets\ only
+pwsh -File scripts\build\import-release.ps1 -Zip Wiz8Widescreen-1.0.2.zip -Binaries    # + prebuilt DLLs
 ```
 
 It copies `files\Data\` and the dgVoodoo files into `assets\` and never overwrites a file that
@@ -185,6 +198,6 @@ package without building the game code. Scripts that regenerate some of the art:
    the game running, rollback, a failed copy, a manual install, uninstall byte for byte.
 4. Tag and push `decomp\` (`git -C decomp tag -a wiz8-widescreen-<version>`), commit the
    submodule pointer and everything else here, then `git tag -a v<version>`; push both repositories with their tags.
-5. Copy `build\package\Wiz8Widescreen-<version>.zip` to `release\` and
-   make it read-only. Builds are not byte-reproducible (timestamps), so this copy is the
+5. Copy `build\package\Wiz8Widescreen-<version>.zip` (it goes on the release page) to `release\`
+   and make it read-only. Builds are not byte-reproducible (timestamps), so this copy is the
    reference for what was published.

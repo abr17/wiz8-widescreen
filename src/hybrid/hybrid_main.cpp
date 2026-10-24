@@ -2,16 +2,19 @@
 //
 // wiz8hy.dll is built by scripts\hybrid\build_hybrid.ps1 from the port sources: everything
 // that exists in the original is bound to its addresses, while the functions from scripts\hybrid\transplant_wide.json are ours.
-// With [Hybrid] Enabled=1, version.dll loads the DLL when the game window is created and calls
-// HybridInstall: each transplanted function of the original gets a jmp at its start to
-// the port's version (table wiz8hy_hooks.txt: original address, RVA in the DLL). Plus a frame
-// rate cap: a wrapper around the original RenderFrame.
+// With [Hybrid] Enabled=1, version.dll loads the DLL from its hook on the game's WinMain
+// (hooks_hybrid.cpp) and calls HybridInstall: each transplanted function of the original gets
+// a jmp at its start to the port's version (table wiz8hy_hooks.txt: original address, RVA in
+// the DLL). The frame rate cap is in the transplanted RenderFrame (Video2.cpp); the wrapper
+// around the original RenderFrame below is only a fallback for a hook list without it. Then
+// the experimental patches of the original code (experimental.h).
 
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "wiz8/canvas.h"
+#include "wiz8/experimental.h"
 
 static FILE* g_log;
 
@@ -63,22 +66,28 @@ static void HybridRenderFrame(void)
     ((VoidFn)(void*)g_renderTrampoline)();
 }
 
-static bool InstallFrameCap(void)
+// Returns the state for the log line. When the hook list replaces RenderFrame (the release
+// config does), its first byte is now our jmp and the ported RenderFrame (Video2.cpp) limits
+// the frame rate itself; no trampoline is needed then.
+static const char* InstallFrameCap(void)
 {
+    if (*(const unsigned char*)(UINT_PTR)kRenderFrame == 0xE9) {
+        return "on (in the replaced RenderFrame)";
+    }
     if (memcmp((void*)(UINT_PTR)kRenderFrame, kRenderFrameHead, sizeof(kRenderFrameHead)) != 0) {
-        HyLog("frame cap: RenderFrame bytes differ (already hooked?), skipped");
-        return false;
+        HyLog("frame cap: RenderFrame bytes differ, skipped");
+        return "off";
     }
     g_renderTrampoline = (unsigned char*)VirtualAlloc(0, 32, MEM_COMMIT | MEM_RESERVE,
                                                       PAGE_EXECUTE_READWRITE);
     if (!g_renderTrampoline) {
-        return false;
+        return "off";
     }
     memcpy(g_renderTrampoline, kRenderFrameHead, sizeof(kRenderFrameHead));
     g_renderTrampoline[7] = 0xE9;
     int rel = (int)((kRenderFrame + 7) - ((unsigned)(UINT_PTR)g_renderTrampoline + 12));
     memcpy(g_renderTrampoline + 8, &rel, 4);
-    return PatchJump(kRenderFrame, (unsigned)(UINT_PTR)&HybridRenderFrame);
+    return PatchJump(kRenderFrame, (unsigned)(UINT_PTR)&HybridRenderFrame) ? "on" : "off";
 }
 
 // --- crash log: address and stack of the first access violations (symbolize.py) ---
@@ -141,7 +150,11 @@ extern "C" __declspec(dllexport) int __cdecl HybridInstall(const char* dir)
         count += ok;
     }
     fclose(f);
-    HyLog("frame cap: %s (MaxFps=%d), ViewDistance=%.2f", InstallFrameCap() ? "on" : "off",
+    HyLog("frame cap: %s (MaxFps=%d), ViewDistance=%.2f", InstallFrameCap(),
           DisplayMaxFps(), DisplayViewDistanceScale());
+    /* Experimental (experimental.h): fixes of the original's own bugs, and the alternative
+       game tick (FrameRateFix); each installs its patches whatever its switch */
+    HyLog("original fixes: %s", ExperimentalInstallOriginalFixes());
+    HyLog("alternative game tick: %s", ExperimentalInstallFrameRateFix());
     return count;
 }

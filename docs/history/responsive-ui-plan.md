@@ -21,11 +21,11 @@ run for it. A "session" is 2-4 hours of my work: code, build, in-game check.
 
 | Window | What the width gives | Work | New art | Advice |
 |---|---|---|---|---|
-| Inventory and stats (rest/character screen, 5 pages) | **Party shared items: 16 items at 16:10 and 24 at 16:9 instead of 8** - 2-3 times less scrolling. The rest (paper doll, backpack, stats) is fixed and simply moves apart to the edges | ~7 (3.5-4 layout + 2-2.5 wide item grid + 0.5-1 art and check) | 1 marble bridge piece in the top row (Astra) | **Do** |
+| Inventory and stats (rest/character screen, 5 pages) | **Party shared items: 16 items at 16:10 and 24 at 16:9 instead of 8** - 2-3 times less scrolling. The rest (paper doll, backpack, stats) is fixed and simply moves apart to the edges | ~7 (3.5-4 layout + 2-2.5 wide item grid + 0.5-1 art and check) | 1 marble bridge piece in the top row (generative AI) | **Do** |
 | Options, save/load, settings | Looks only: 5 save rows per page - a height limit | ~1-1.5 | not needed (stretching pieces) | **Do first**: quick and seen often |
-| Journal | Entry column 29% wider (16:10) / 50% (16:9): long lines are not cut off (line wrapping is off in the journal) | ~1-1.5 | wider parchment (Astra) | **Do** |
-| Character creation and party selection | Almost nothing: lists are limited by height, there will be empty gaps | ~7 | page backgrounds (Astra), 8-bit party background | Keep centered with marble |
-| Popups (item info, chest, confirmations) | Nothing: these are "modal windows" with a maximum width, they are already centered over the wide screen | ~1 (credits with a wide background, a click on the wings closes the window) | wide credits background (Astra) | Keep centered |
+| Journal | Entry column 29% wider (16:10) / 50% (16:9): long lines are not cut off (line wrapping is off in the journal) | ~1-1.5 | wider parchment (generative AI) | **Do** |
+| Character creation and party selection | Almost nothing: lists are limited by height, there will be empty gaps | ~7 | page backgrounds (generative AI), 8-bit party background | Keep centered with marble |
+| Popups (item info, chest, confirmations) | Nothing: these are "modal windows" with a maximum width, they are already centered over the wide screen | ~1 (credits with a wide background, a click on the wings closes the window) | wide credits background (generative AI) | Keep centered |
 
 **Owner's decision (2026-10-12):** the character screen (items, magic, skills,
 statistics) laid out full-width by the window layouter looked bad - it was returned to 4:3 centered with
@@ -38,7 +38,7 @@ screen (HUD "A"). Movies stay 4:3 centered (they cannot be redrawn).
 ## Order
 
 1. Art preparation (0.5): unpack the backgrounds of saves, journal, skills page;
-   right away give Astra the inventory bridge, journal parchment, credits background.
+   right away generate the inventory bridge, journal parchment, credits background.
 2. Options and saves (1-1.5): left column to the left edge, the frame on the right stretched
    to the right edge, content centered. Also here: a shared wide-window "helper" and
    a single ini key, so that the journal and inventory use the same thing.

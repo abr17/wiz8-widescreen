@@ -1,6 +1,6 @@
 # Function addresses (GOG Wiz8.exe, SHA-256 18A74FF6…20D2)
 
-> The addresses in the original Wiz8.exe (GOG/Steam 1.2.4) are current. The "Phase 4" section describes the hooks of the old `version.dll` patch, not the hybrid; the addresses of the hybrid's 287 functions are in `scripts\hybrid\transplant_wide.json`.
+> The addresses in the original Wiz8.exe (GOG/Steam 1.2.4) are current. The "Phase 4" section describes the hooks of the old `version.dll` patch, not the hybrid; the addresses of the hybrid's 289 functions (1.0.2) are in `scripts\hybrid\transplant_wide.json`.
 
 Source of names: the public decompilation https://github.com/agluszak/wizardry-8-decomp (locally `ref\wizardry-8-decomp`, commit 075cbd0 of 2026-10-10; it has no LICENSE — we do not copy code, only addresses and logic).
 
@@ -41,6 +41,8 @@ Statuses:
 | g_gerd (SR renderer) | 0x00659634 | hypothesis |
 | ghWindow | 0x006596CC | hypothesis |
 | g_surface_node | 0x00659664 | hypothesis |
+| gzErrorMsg (`char[2048]`, sgp.cpp) | 0x006505AC | statically consistent: `// GLOBAL: WIZ8 0x006505ac` in decomp; in the retail code (llvm-objdump of `ghidra\bin\Wiz8.exe`, as `scripts\tools\retail_asm.py`) `SGPExit` (0x004017F0) takes its length at 0x401890 and passes it to `MessageBoxA` at 0x4018A9, `ShutdownWithErrorBox` (0x00401920) copies the message into it at 0x40192A. Read by `src\diagnostics.cpp` (the game's error text at exit) |
+| gXStatus.fCombatMode (byte) | 0x00683F94 | statically consistent: `gXStatus` is `// GLOBAL: WIZ8 0x006836B8` (GameplayDatabase.cpp), the field is at +0x8DC (`xstatus.h`); in the retail code 307 byte accesses, the only writes `mov byte [0x683f94], 1` at 0x4E731D in `StartCombat` (0x004E7090) and `, 0` at 0x4EA481 in `EndCombat` (0x004EA310). Read by `src\diagnostics.cpp` (`combat=` in the log lines) |
 
 All references to 1/640 in `.text`: 0x426281, 0x4262C0, 0x4273FC, 0x42741D, 0x42830C, 0x5823DC, 0x5823F1, 0x58258E, 0x5826A1, 0x5827B3, 0x5828C6, 0x58353B.
 

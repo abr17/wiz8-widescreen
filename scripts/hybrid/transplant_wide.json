@@ -4,10 +4,10 @@
   "src/wiz8/engine_code/Canvas.cpp"
  ],
  "auto_units": true,
- "dll_owned_globals": [
-  "g_surface_nodes",
-  "g_tile_dirty_flags"
- ],
+ "dll_owned_globals": {
+  "g_surface_nodes": "Enlarged for the wide canvas: one entry per 8x8 screen cell, the retail array holds 80x60, the widest canvas needs 107x60. Every retail function that uses the retail array is transplanted except ReleaseSurfaceNode 0x00425950, which is dead in the hybrid (all its callers are transplanted, the DLL inlines its own copy); build_hybrid.py checks this on every build.",
+  "g_tile_dirty_flags": "Enlarged for the wide canvas, same cells as g_surface_nodes (retail 80x60, widest canvas 107x60). Every retail user is transplanted except the dead ReleaseSurfaceNode 0x00425950 (see g_surface_nodes); checked on every build."
+ },
  "transplant": {
     "0x005aa400": "W8OptionsGraphicsPanel::OnDragEnd: settings",
     "0x005aa3f0": "W8OptionsGraphicsPanel::OnDrag: settings",
@@ -191,6 +191,7 @@
   "0x00581280": "RestoreAutomapRect: widescreen_ui",
   "0x00581460": "ShowAutomapNoteTooltip: widescreen_ui",
   "0x00582050": "dependency of FindAutomapNoteUnderCursor",
+  "0x005820f0": "SetAutomapToolCursor: experimental (map controls cursor)",
   "0x00582180": "FindAutomapNoteUnderCursor: widescreen_ui",
   "0x005822c0": "CreateAutomapMarkerSprites: widescreen_ui",
   "0x00582930": "RenderAutomapMarkers: widescreen_ui",
@@ -263,6 +264,7 @@
   "0x005a8670": "W8OptionsPanel::AddChoiceButton: widescreen_ui",
   "0x005a8800": "W8OptionsPanel::AddSlider: widescreen_ui",
   "0x005a8c90": "W8OptionsMenuSet::W8OptionsMenuSet: widescreen_ui",
+  "0x005a93c0": "W8OptionsScreen::SelectPanel: widescreen_ui (frame rate page, Video page 3) + experimental (Experimental category page)",
   "0x005a95f0": "W8OptionsScreen::Redraw: widescreen_ui",
   "0x005a9820": "W8OptionsScreen::BeginSaveNameEdit: widescreen_ui",
   "0x005a98b0": "W8OptionsScreen::CreateControls: widescreen_ui",

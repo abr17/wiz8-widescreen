@@ -300,7 +300,7 @@ Other files:
 | `src\wiz8\local_screens\IntroScreen.cpp:52` | `IntroScreenEnter` | pitch instead of 0x500 |
 | `src\wiz8\local_screens\MainGameScreen.cpp:2922` | `MainGameScreenEnter` | pitch instead of 0x500 |
 | `src\wiz8\local_screens\PleaseWaitScreen.cpp:140` | entry of the "Please wait" screen | pitch instead of 0x500 |
-| `src\wiz8\local_screens\ReviewCharacterScreen.cpp:1309` | entry of the camp screen | pitch instead of 0x500 |
+| `src\wiz8\local_screens\ReviewCharacterScreen.cpp:1317` | entry of the camp screen | pitch instead of 0x500 |
 | `src\wiz8\local_screens\AutomapScreen.cpp:1836` | `CreateAutomapMarkerSprite` | 1/W |
 | `src\wiz8\local_screens\AutomapScreen.cpp:1858` | `CreateAutomapMarkerSprites` (party marker) | 1/W on both axes |
 | `src\wiz8\local_screens\AutomapScreen.cpp:2085` | item marker on the automap | 1/W |
@@ -844,8 +844,8 @@ a wide pair if one exists. Currently these are:
 |---|---|---|
 | Level loading (33 backgrounds from the `g_level_backdrops` table) | `Level Load\Arnika.sti` ... `Level Load\Wilderness Clearing2.sti` | `DrawPleaseWaitScreen` (`PleaseWaitScreen.cpp:189`) |
 | Level loading without its own background, game saving (same screen) | `Options\intro_bg.sti` (fallback background 0xe4) or the current level's background | same place |
-| Party death | `Level Load\DeathScreen.sti` | `DrawPartyDeathScreen` (`ReviewCharacterScreen.cpp:2735`) |
-| Endings | `Level Load\DarkLord.sti`, `Cosmic ending.sti`, `BlowOut.sti`, `DeathScreen.sti` | `ShowEndingScreen` (`ReviewCharacterScreen.cpp:2823`) |
+| Party death | `Level Load\DeathScreen.sti` | `DrawPartyDeathScreen` (`ReviewCharacterScreen.cpp:2741`); in the hybrid it never ran before the 1.0.2 fix, see [Party death hung in the hybrid](#party-death-hung-in-the-hybrid-since-100-fixed-2026-10-22) |
+| Endings | `Level Load\DarkLord.sti`, `Cosmic ending.sti`, `BlowOut.sti`, `DeathScreen.sti` | `ShowEndingScreen` (`ReviewCharacterScreen.cpp:2829`); reached through the same fade callback |
 | Main menu | `Options\intro_bg_text.sti` -> `INTRO_BG_TEXT_<W>.STI` (the same file as before) | `MainMenuScreenEnter` / `MainMenuScreenFrame` (`MainMenuScreen.cpp:170, 249`) |
 | Camp (rest) | `Level Load\Camping Screen.sti` | `UpdateSurpriseFade` (`MainGameScreen.cpp:8452`) - a special path, see below |
 | Incidentally, if pairs appear | credits `Options\intro_bg_credits.sti`, options and other 640x480 backgrounds from the catalog | their normal `DrawCatalogImage` calls |
@@ -983,7 +983,7 @@ checklist); pairs `*_768.STI` / `*_856.STI` in `games\work\Data\LEVEL LOAD\` and
 | W7 | Enter the same zone again | no pause for reading the file (cache); no repeated log line for this file |
 | W8 | Camp (rest button) with the pair `Camping Screen_768.STI` | after the fade, the camp picture over the whole screen without distortion, HUD on top at the edges; when the rest ends (or on an ambush) - the world, with no leftovers of the picture |
 | W9 | Camp **without** the pair (temporarily rename it) | as before the mod: the 640x480 picture stretched across the full width, without black bars; `no file` in the log for `Camping Screen_<W>.sti` |
-| W10 | Party death (or a test: lose a fight) | death screen across the full width, caption bottom right in the 640 window, no HUD leftovers on the sides; on a key press - fade and exit to the menu, the menu has its own background without pieces of the death screen |
+| W10 | Party death (or a test: lose a fight) | death screen across the full width, caption bottom right in the 640 window, no HUD leftovers on the sides; on a key press - fade and exit to the menu, the menu has its own background without pieces of the death screen (written for the port; the hybrid hung here until 1.0.2, see [Party death hung in the hybrid](#party-death-hung-in-the-hybrid-since-100-fixed-2026-10-22)) |
 | W11 | Ending (save before the finale) | ending picture across the full width, text centered; transition to the credits - the credits have black bars (or their wide background if there is a pair) |
 | W12 | A zone that has no pair (temporarily remove the file) | 640x480 background centered with black bars, as before; in the log `no file, original 640x480 is used` |
 | W13 | A pair of the wrong size (for example, `_768` at 856) | ignored, background centered; in the log `ignored, need 16-bit 856x480, file is 16-bit 768x480` |
@@ -1030,9 +1030,15 @@ marble with a bevel at the window edge. The window looks like part of one stone 
 The main game screen (layout A), menu, loading screens and credits are not touched.
 
 **Picture.** `Data\Wide\WideFrame_<W>.sti` (16-bit, W x 480, the center is not
-used). The marble was painted by Astra from an inventory screenshot; the bevel and
-darkening toward the edge are added by `scripts\art\make_wings.py` (for 768 the
-inner part of the 856 margins is used). Without the file - black bars, as before.
+used). Since 1.0.2 the stone is the game's own marble (owner, 2026-10-22: no non-native
+art): `scripts\art\native_wings.py --edge makewings` quilts pieces of the inventory marble
+behind the paper doll (`REVIEW\REVIEWITEMPAGE` frame 2), `CG_SKILLS`, `AUTOMAP\MAP_BORDER` and
+`COMMOD_BACK` (turned and mirrored, minimum-cut joins, a distinctive box crack excluded,
+horizontal bands removed, levelled to the window marble's colour), then adds the dark groove,
+shadow and bevel at the window edge as `make_wings.py` did; the 768 strip is the inner part
+of the 856 one. Checked with boosted gamma on the inventory, stats, magic, skills, creation
+and party screens at 768 and 856: no seam, no nearby repeat. Until 1.0.1 the marble was
+made with generative AI from an inventory screenshot. Without the file - black bars, as before.
 
 **Code.** `UpdateWideSideWings(screen)` (`WideArt.cpp`) is called from `GameLoop`
 before the screen's frame. It draws only the bars, if the screen is in the list, layout A
@@ -1120,7 +1126,7 @@ spun the animation for 2^32 frames. Fixed with the comparison `!(speed >= minimu
 The menu item pictures `Data\Options\introtext_{normal,highlight,depressed,unavailable}.sti`
 (in both the English and the Russian editions) are opaque 346x44 strips with a piece of
 the original menu background under the letters. On the new menu background (a full repaint
-by Astra) they were visible as rectangles. `scripts\menutext_alpha.py` (removed after 1.0.0, available in git at tag 1.0.0) made the background
+made with generative AI) they were visible as rectangles. `scripts\menutext_alpha.py` (removed after 1.0.0, available in git at tag 1.0.0) made the background
 transparent (letters, outline and highlight glow remain; the mask is by difference from
 the original background), the files lie next to the game in `Data\OPTIONS` (a loose file
 takes priority over the DATA.SLF archive), copies were in `art\menutext\{ru,work}` (the folder was removed). `DrawMainMenuItem`
@@ -1143,10 +1149,29 @@ the shift is always below the threshold: speed never builds up. Memory measureme
 the build without a limit - ~1000 frames/s (dt 0.01, got stuck).
 
 The fix is the frame rate limit `CanvasLimitFrameRate` (Canvas.cpp,
-called once per frame from `RenderFrame`): `wiz8wide.ini [Display] MaxFps`, by
-default 120 (0 - no limit, 1..29 is raised to 30). Waiting via QPC,
+called once per frame from `RenderFrame`): `wiz8wide.ini [Display] MaxFps`,
+120 until 1.0.1 (0 - no limit, 1..29 is raised to 30). Waiting via QPC,
 `timeBeginPeriod(1)` + `Sleep(1)`, the last 2 ms `Sleep(0)`; a frame that is late
 by more than one period resets the schedule (no burst of catch-up frames).
+
+**1.0.2: default 60, and a page in the game.** The owner found stairs that were hard to climb
+and remembered the Umpani camp doors that needed a run-up. A consilium (2026-10-22, notes in
+`build\tmp\fps-consilium\`, not in git) read the movement code (`ApplyCameraMotion`
+0x0041F5F0, `AdvanceEnvironmentMotion` 0x0041AB40, `TestSegment`, `ClampHitToEdge`,
+`ResolveCollision`; none replaced by the patch) and ran a Python port of it: the party has no
+step-up code, it moves as a sphere 500 units below the camera; the top edge of a riser
+stops it about 350 units out, while a walkable tread lifts it only within ~250, so on a
+ledge taller than ~243 units there is a band where the riser wins. The party gets over only
+when one frame's travel (speed x dt) jumps that band; once stopped, it restarts from rest
+(112.5 * dt^2 per frame) and does not clear it, hence the run-up. Shorter frames make it
+worse: a 300-unit ledge is climbed walking in about half the tries at 60 fps and never at
+120; the original on a modern PC (~220 fps, no cap) is worse than 120. The opposite effect:
+starting from rest facing straight up a ~31-degree slope stalls at rates up to ~147 fps (a
+step in or a turn of ~10 degrees frees it), as on 2001 hardware. The default is now 60 (what
+a good 2001 PC gave) and Options - Video has a third page (`W8OptionsFrameRatePanel`,
+OptionsScreen.cpp; panel index 15, added to the Video set in `SelectPanel`): a slider with
+three stops 30 / 60 / 120 and the number next to it, an "Unlimited" checkbox (MaxFps=0);
+`DisplaySetMaxFps` applies at once and writes the ini.
 
 ## Log background in layout A without the "accordion" (2026-10-12)
 
@@ -1203,3 +1228,48 @@ the gameplay range - monster vision, group loading (1.5x), AI and spells rely on
 are enabled/disabled at 20000/25000 x k; the "sun shadow" of monsters - render range x k.
 The sky world is not scaled. At k = 1 everything is as in the original. On this machine 2.0 holds
 120 frames/s. (Checked with screenshots in Northern Wilderness; they are not kept in the repository.)
+
+## Party death hung in the hybrid (since 1.0.0, fixed 2026-10-22)
+
+**What the player saw.** When the whole party died (in a fight, or by a fall), the original
+shows "Your party has been defeated!" over the `DeathScreen` picture and goes back to the main
+menu on a key or a click. With the patch the 3D view went black, the HUD, the skull portraits
+and the combat log stayed, no picture came and nothing changed any more: Enter, Space, clicks
+and Esc only replayed an invisible 0.8 s fade. The game kept running; the only way out was to
+close it. 1.0.0, 1.0.1 and the 1.0.2 candidate all had it (the released DLLs make the same
+store, checked by reading them). The endings go through the same fade callback, so they should
+have hung the same way (not tested in the game).
+
+**Cause: one global of the fade was not tied to the original's address.** The fade state is six
+globals at 0x69c10c-0x69c120 (`ReviewCharacterScreen.cpp`). The hybrid replaces
+`BeginScreenFade` (0x5a6620, the fade quad over the whole canvas in layout A) but not
+`UpdateScreenFade` (0x5a6790), which calls the stored callback when the fade ends.
+`build_hybrid.py` ties each annotated global to its original address by the name that
+`scripts\w8diff\w8diff\symbols.py` reads at the end of the declaration under `// GLOBAL`. For
+`void (*g_fade_callback)(void);` the declaration ends in `)`, the name came out empty, and
+`wiz8hy.dll` got its own private copy (`?g_fade_callback@@3P6AXXZA 1009b618
+ReviewCharacterScreen.obj` in `wiz8hy.map`, while the other five fade globals were
+`<absolute>`). The replaced `BeginScreenFade` wrote the callback into the DLL copy; the original
+`UpdateScreenFade` read 0x69c110, which nothing else writes, so it was always 0. So
+`DrawPartyDeathScreen` (picture, caption, HUD wipe, the holding fade) never ran. The original
+`PumpReviewTransition` still ran every frame: it unloaded the level (the black 3D view under the
+old HUD) and caught the key, but the callback of its closing fade, `EndReviewTransition`, was
+lost the same way, so the game fell back into the wait.
+
+**Fix.** `typedef void (*W8FadeCallback)(void);` and `W8FadeCallback g_fade_callback;` in
+`ReviewCharacterScreen.cpp`: the name is read, the build ties the global to 0x69c110
+(`?g_fade_callback@@3P6AXXZA 0069c110 <absolute>`; `BeginScreenFade` now does
+`mov [0x69c110], eax`). Nothing else in the build changed: the same 289 hooks, and this is the
+only binding that differs in `wiz8hy.map`.
+
+**Other globals of that shape** (function pointers, vectors declared with a constructor
+argument): all are bound to the original now, see [hybrid.md](hybrid.md), "Game variables".
+
+**Checked** in the sandbox (save "GPT party progress", HP=1 for everyone + the camera 8000 up,
+and once a real fight with HP=1): canvas 768 - `DeathScreen_768` across the full width with the
+caption bottom right, `[WideArt] Data\Level Load\DeathScreen_768.sti: loaded 768x480` in the
+log, Enter -> main menu after the 0.8 s fade, the save loads again and the party walks; canvas
+640 - the original picture, Enter -> main menu, load again; the fight at 768 - the same as the
+fall. The callback at 0x69c110 read during the runs: 0x5a6a70 (`DrawPartyDeathScreen`) at the
+death, 0x5a6b20 (`EndReviewTransition`) after Enter, as in the pure original. W10 above was
+written for the port `Wiz8Runtime.exe`, where the variable exists once, so it could not catch this.

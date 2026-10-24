@@ -55,11 +55,12 @@ Not used by us: `docker/`, `.github/`, `vendor/ghidra/`, `tools/wiz8decomp/` (up
 | wide canvas, display modes, settings ini, screenshots | `engine_code/Canvas.cpp`, `engine_code/Video2.cpp` (`VideoApplyDisplaySettings`), `decomp\include\wiz8\canvas.h` |
 | wide art loading, stretched panel strips | `engine_code/WideArt.cpp`, `local_screens/MainGameLayout.cpp` (`DrawCatalogImageWide`) |
 | main game HUD (layout "A"), bottom panels, portraits | `local_screens/MainGameScreen.cpp`, `local_screens/MainGameLayout.cpp`, `local_screens/MGSButtons.cpp` |
-| options (all pages, display settings and resolution list on Video page 2), save/load list | `local_screens/OptionsScreen.cpp` (`AddDisplaySettings`, option text anchoring `OptionsTextAnchor`) |
+| options (all pages, display settings and resolution list on Video page 2, frame rate limit on Video page 3), save/load list | `local_screens/OptionsScreen.cpp` (`AddDisplaySettings`, option text anchoring `OptionsTextAnchor`) |
 | journal, automap, main menu, intro/credits | `local_screens/JournalScreen.cpp`, `local_screens/AutomapScreen.cpp`, `local_screens/MainMenuScreen.cpp`, `local_screens/IntroScreen.cpp` |
 | NPC dialogue panel | `local_screens/NPCInteractionSubscreen.cpp` |
 | Russian text (cp1251 font table, layout switch) | `russian_text.cpp`, `../sgp/Font.cpp`, `../sgp/input.cpp` |
 | window, mouse, WM_SIZING | `../sgp/sgp.cpp`, `../sgp/mousesystem.cpp` |
+| experimental features (animated main menu, Options category "Experimental") | `experimental/`, `decomp\include\wiz8\experimental.h`; call sites marked "Experimental" ([experimental.md](experimental.md)) |
 
 A change in `decomp\` reaches the shipped `wiz8hy.dll` only if the changed function is
 listed in `scripts\hybrid\transplant_wide.json` (see [hybrid.md](hybrid.md) and

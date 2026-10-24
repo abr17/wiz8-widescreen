@@ -8,13 +8,23 @@ display settings inside the game. Current release: **1.0.1** (2026-10-18), see
 
 The original `Wiz8.exe` is never modified.
 
+Since 1.0.2, Options - Experimental holds optional features that are off by default: an
+animated main menu, map mouse controls, fixes of the original game's own bugs and an
+alternative game tick ([docs/experimental.md](docs/experimental.md)). For players whose game
+closes by itself the installer has a "Diagnostics mode" checkbox, which records how the game
+ended ([docs/loader.md](docs/loader.md)).
+
 ## Made with AI
 
 This patch was built with AI. The reverse engineering, code, installer and documentation
 were written by AI coding agents (Claude Code, using REA for reverse engineering), directed
-and tested by abr17. The missing widescreen art was outpainted with generative AI: original
-images are kept pixel-for-pixel, only the new side areas are generated, blended over a
-narrow strip at the original edge.
+and tested by abr17. The missing widescreen art (loading screens, menu and credits
+backgrounds, and more) was outpainted with generative AI: original images are kept
+pixel-for-pixel, only the new side areas are generated, blended over a narrow strip at the
+original edge. The marble side wings of the windows that stay 4:3 are made from the game's
+own marble since 1.0.2 (pieces of the original backgrounds, nothing generated). The animated
+main menu video and the art of the Options category "Experimental" (1.0.2) were made with
+generative AI.
 
 ## Screenshots
 
@@ -24,7 +34,7 @@ Each picture shows the same moment three times: the original game (4:3), then th
 **Main menu**: the menu art is extended to the full width; the corner shows the patch version.
 ![Main menu: original 4:3, patch 16:10, patch 16:9](docs/screenshots/compare-01-main-menu.jpg)
 
-**Options**: full-width option pages, with the patch's new settings (view distance; display mode and resolution on page 2).
+**Options**: full-width option pages, with the patch's new settings (view distance; display mode and resolution on page 2; frame rate limit on page 3).
 ![Options: original 4:3, patch 16:10, patch 16:9](docs/screenshots/compare-02-options.jpg)
 
 **Character sheet**: kept at 4:3 in the centre, with stone side panels.
@@ -45,7 +55,7 @@ Wiz8.exe (original)  ──loads──>  version.dll   (our proxy: src/, built w
                                      └─loads──>  wiz8hy.dll  (the "hybrid": game functions
                                                  rebuilt from decompiled source with our
                                                  widescreen changes; each one replaces the
-                                                 original function via a jmp patch; 287 in 1.0.x)
+                                                 original function via a jmp patch; 289 in 1.0.2)
 ```
 
 * The game's source code comes from a public **decompilation** of Wizardry 8
@@ -91,7 +101,7 @@ stay local. [docs/building.md](docs/building.md) says where each one comes from.
 The workspace must be at **`C:\dev\wiz8-ws`** (several scripts and `.mcp.json` use that path),
 cloned with submodules (`git submodule update --init`, which also fetches `decomp\`). It needs
 `Tools\` and `assets\` (not in git, see [docs/building.md](docs/building.md)); `assets\` comes from a
-release zip in one command: `pwsh -File scripts\build\import-release.ps1 -Zip <Wiz8Widescreen-x.y.z.zip>`.
+release zip (1.0.2 or later) in one command: `pwsh -File scripts\build\import-release.ps1 -Zip <Wiz8Widescreen-x.y.z.zip>`.
 
 ```powershell
 . .\Tools\env.ps1                                       # portable tools for this shell only

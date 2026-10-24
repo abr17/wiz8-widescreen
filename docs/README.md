@@ -1,7 +1,6 @@
 # Documentation
 
-Start with the repository [README](../README.md). Guides and release notes are in English; the
-design notes were written during development in Russian.
+Start with the repository [README](../README.md). All documents are in English.
 
 ## Guides (current)
 
@@ -10,6 +9,8 @@ design notes were written during development in Russian.
 | [building.md](building.md) | set up the toolchain, build every piece, package and release |
 | [testing.md](testing.md) | test the patch in the game, automate play, avoid known pitfalls |
 | [decomp-fork.md](decomp-fork.md) | understand the game source in `decomp\`: what is ours, where each screen's code is |
+| [loader.md](loader.md) | know what `version.dll` does besides loading the hybrid: crash and exit diagnostics (`Wiz8Logs\`), game file names on UTF-8 Windows |
+| [experimental.md](experimental.md) | understand, change or remove the experimental features: the Options category "Experimental" and its four switches (Animated Main Menu, Map Mouse Controls, Original Bug Fixes, Alternative Game Tick) |
 
 ## Releases
 
@@ -18,7 +19,7 @@ design notes were written during development in Russian.
 | 1.0.1 (2026-10-18) | [releases/1.0.1.md](releases/1.0.1.md): fixes after 1.0.0, installer updates in place |
 | 1.0.0 (2026-10-17) | [releases/1.0.0.md](releases/1.0.0.md): package contents, hashes, source tags, tests |
 
-## Design reference (current, Russian)
+## Design reference (current)
 
 | Document | Covers |
 |---|---|
