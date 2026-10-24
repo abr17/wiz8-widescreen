@@ -39,6 +39,8 @@ add_library(wiz8ws SHARED
     src/hooks_view3d.cpp
     src/hooks_diff.cpp
     src/hooks_hybrid.cpp
+    src/diagnostics.cpp
+    src/filenames.cpp
     src/version.def
 )
 set_target_properties(wiz8ws PROPERTIES OUTPUT_NAME "version" PREFIX "")
@@ -48,3 +50,15 @@ target_compile_options(wiz8ws PRIVATE -Wall -Wextra -Wno-unused-parameter)
 target_link_libraries(wiz8ws PRIVATE minhook bcrypt)
 # Static linking of the C++ runtime: the DLL does not drag in libc++.dll etc.
 target_link_options(wiz8ws PRIVATE -static -static-libgcc -s)
+
+# Test of the file names on UTF-8 Windows (src/filenames.cpp), not built by default:
+#   cmake --build build --target test_filenames; build\test_filenames.exe
+enable_language(RC)
+add_executable(test_filenames EXCLUDE_FROM_ALL
+    src/tests/test_filenames.cpp
+    src/tests/test_filenames.rc
+    src/filenames.cpp
+)
+target_compile_features(test_filenames PRIVATE cxx_std_17)
+target_compile_definitions(test_filenames PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX WIZ8WS_TESTING)
+target_link_options(test_filenames PRIVATE -municode -static)
