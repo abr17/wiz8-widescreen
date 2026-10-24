@@ -23,7 +23,7 @@ Most scripts print usage in their header comment.
 |---|---|
 | `build_hybrid.ps1 [-Install] [-NoCompile] [-Config file]` | entry point; builds `build\hybrid\wiz8hy.dll` + `wiz8hy_hooks.txt` |
 | `build_hybrid.py`, `coff.py` | the build itself: compile, rewrite COFF objects to bind to original addresses, link |
-| `transplant_wide.json` | **the release config**: units to compile and the 287 original functions to replace |
+| `transplant_wide.json` | **the release config**: units to compile and the 289 original functions to replace |
 | `try_hybrid.ps1` | start the original exe in `games\work` with the hybrid, optionally load a save, print logs |
 | `hy_screens.ps1`, `hy_play.ps1` | screenshots / mouse helpers for the hybrid driven through the in-game test stand |
 | `stack_retail.ps1`, `symbolize.py` | dump and symbolize the main-thread stack of a hung game (original + `wiz8hy.map`) |
@@ -44,13 +44,16 @@ See [docs/testing.md](../docs/testing.md).
 |---|---|
 | `stretch_config.py` → `stretch_quilt.py` | seamless stretched-panel strips `assets\Data\WIDE\STRETCH\S*_768/856.sti` (config from the original UI STIs extracted into `build\stretch\en` with `scripts\tools\slf_extract.py`) |
 | `niche_quilt.py` (+ `make_lock_niche.py`) | `assets\Data\WIDE\LOCKPICKGAPS_*.STI` |
-| `make_wings.py`, `neutralize_wings.py` | `assets\Data\WIDE\WIDEFRAME_*.STI` (marble side wings of 4:3 windows) |
+| `make_wings.py`, `neutralize_wings.py` | `assets\Data\WIDE\WIDEFRAME_*.STI` of 1.0.0-1.0.1 (the AI-painted marble side wings of 4:3 windows) |
+| `native_wings.py` | `assets\Data\WIDE\WIDEFRAME_768.STI` and `WIDEFRAME_856.STI` since 1.0.2 (side wings stitched from the game's own marble), with `--edge makewings`; output in `build\tmp\native-wings\` |
 | `find_slice.py` | finds a self-tiling slice of an image |
 | `artkit.py`, `sti8.py` | libraries: PNG and 16-bit STI read/write, 8-bit STI decode |
 
 The wide loading screens, menu and credits backgrounds of 1.0.0 were redrawn with an
 external image service and approved by eye; those one-off scripts were removed after the
-release (they are in git history at tag `1.0.0`).
+release (they are in git history at tag `1.0.0`). The same goes for the art of the
+experimental Options category and the animated menu video of 1.0.2 (drawn by Astra, fitted
+into the game's `.STI` files by one-off scripts; see [docs/experimental.md](../docs/experimental.md)).
 
 ## tools/ — analysis and game-format utilities
 
