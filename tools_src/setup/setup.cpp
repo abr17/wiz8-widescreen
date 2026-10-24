@@ -16,7 +16,11 @@
 //     install button becomes "Update X -> Y", over the same one "Reinstall", over a newer
 //     one "Roll back X -> Y" (asks first): all of them quietly uninstall the old files first
 //     and keep the player's wiz8wide.ini and wiz8ws.ini's Enabled=0, also through a failure;
-//   - changes nothing while a file of the folder is in use (the game running).
+//   - changes nothing while a file of the folder is in use (the game running);
+//   - a "Diagnostics mode" checkbox sets [Debug] Diagnostics of wiz8ws.ini (docs\loader.md):
+//     off on a fresh install, over an install it shows the current value and the install
+//     writes whatever the player leaves it at; without the window --diagnostics or
+//     --no-diagnostics after the folder, neither = keep the current value.
 // Wiz8Wide.installed.txt must stay readable by older installers, because any of them may be
 // run over a newer install: one line per installed file (relative path), "+folder" for a
 // folder the install created, and lines starting with '*' for everything else ('*' cannot be
@@ -95,6 +99,7 @@ enum Text {
     T_IN_USE,
     T_UNINSTALL_INCOMPLETE,
     T_UPDATE_FAILED,
+    T_DIAGNOSTICS,
     T_COUNT
 };
 
@@ -146,6 +151,7 @@ const wchar_t* const kEnglish[T_COUNT] = {
     L"Could not copy a file:\n%s\n\nThe patch is not installed now: the old version had already "
     L"been removed, and the game folder is back to the original. Your settings are kept for the "
     L"next install.",
+    L"Diagnostics mode (for bug reports)",
 };
 
 const wchar_t* const kRussian[T_COUNT] = {
@@ -197,6 +203,7 @@ const wchar_t* const kRussian[T_COUNT] = {
     L"Не удалось скопировать файл:\n%s\n\nСейчас патч не установлен: старая версия уже была "
     L"удалена, папка игры вернулась к оригиналу. Ваши настройки сохранены для следующей "
     L"установки.",
+    L"Режим диагностики (для сообщений об ошибках)",
 };
 
 const wchar_t* const kGerman[T_COUNT] = {
@@ -253,6 +260,7 @@ const wchar_t* const kGerman[T_COUNT] = {
     L"Eine Datei konnte nicht kopiert werden:\n%s\n\nDer Patch ist jetzt nicht installiert: Die "
     L"alte Version war bereits entfernt, der Spielordner ist wieder im Originalzustand. Ihre "
     L"Einstellungen bleiben f\x00fcr die n\x00e4" L"chste Installation erhalten.",
+    L"Diagnosemodus (f\x00fcr Fehlerberichte)",
 };
 
 const wchar_t* const kFrench[T_COUNT] = {
@@ -309,6 +317,7 @@ const wchar_t* const kFrench[T_COUNT] = {
     L"Impossible de copier un fichier :\n%s\n\nLe patch n'est plus install\x00e9 : l'ancienne "
     L"version avait d\x00e9j\x00e0 \x00e9t\x00e9 retir\x00e9" L"e et le dossier du jeu est revenu "
     L"\x00e0 l'original. Vos r\x00e9glages sont conserv\x00e9s pour la prochaine installation.",
+    L"Mode diagnostic (pour les rapports de bug)",
 };
 
 const wchar_t* const* g_text = kEnglish;
@@ -838,6 +847,95 @@ std::vector<std::wstring> RemoveInstalled(const std::wstring& game,
     return failed;
 }
 
+/* Wiz8Logs\ written by the patch's diagnostics ([Debug] Diagnostics=1): session folders
+   20*\ with the three logs and crash-*.dmp. Only those are removed; a folder that still holds
+   anything else stays. */
+void RemoveDiagnosticLogs(const std::wstring& game)
+{
+    std::wstring logs = Join(game, L"Wiz8Logs");
+    WIN32_FIND_DATAW found;
+    HANDLE search = FindFirstFileW(Join(logs, L"*").c_str(), &found);
+    if (search != INVALID_HANDLE_VALUE) {
+        do {
+            std::wstring name = found.cFileName;
+            std::wstring path = Join(logs, name);
+            if (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+                continue; /* a link made by someone else: never follow it */
+            }
+            if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && name.compare(0, 2, L"20") == 0) {
+                for (const wchar_t* log : {L"wiz8ws.log", L"wiz8hy.log", L"wiz8wide.log"}) {
+                    std::wstring file = Join(path, log);
+                    SetFileAttributesW(file.c_str(), FILE_ATTRIBUTE_NORMAL);
+                    DeleteFileW(file.c_str());
+                }
+                RemoveDirectoryW(path.c_str()); /* only if empty */
+            } else if (!(found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && name.size() > 10 &&
+                       name.compare(0, 6, L"crash-") == 0 && name.compare(name.size() - 4, 4, L".dmp") == 0) {
+                SetFileAttributesW(path.c_str(), FILE_ATTRIBUTE_NORMAL);
+                DeleteFileW(path.c_str());
+            }
+        } while (FindNextFileW(search, &found));
+        FindClose(search);
+    }
+    RemoveDirectoryW(logs.c_str()); /* only if empty */
+}
+
+/* With the diagnostics on (Wiz8Logs\ exists), the logs of the last session move into
+   Wiz8Logs\<date_time>\ as the patch itself does at the next start, so an update right after
+   a crash does not lose the exit trace. Without Wiz8Logs\ they are deleted as before. */
+void KeepLastSessionLogs(const std::wstring& game)
+{
+    std::wstring logs = Join(game, L"Wiz8Logs");
+    if (!DirExists(logs)) {
+        return;
+    }
+    static const wchar_t* const kLogs[] = {L"wiz8ws.log", L"wiz8hy.log", L"wiz8wide.log"};
+    FILETIME newest = {};
+    bool any = false;
+    for (const wchar_t* log : kLogs) {
+        WIN32_FILE_ATTRIBUTE_DATA data;
+        if (GetFileAttributesExW(Join(game, log).c_str(), GetFileExInfoStandard, &data)) {
+            any = true;
+            if (CompareFileTime(&data.ftLastWriteTime, &newest) > 0) {
+                newest = data.ftLastWriteTime;
+            }
+        }
+    }
+    if (!any) {
+        return;
+    }
+    FILETIME local;
+    SYSTEMTIME t;
+    FileTimeToLocalFileTime(&newest, &local);
+    FileTimeToSystemTime(&local, &t);
+    wchar_t stamp[32];
+    wsprintfW(stamp, L"%04d-%02d-%02d_%02d-%02d-%02d", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute,
+              t.wSecond);
+    std::wstring session = Join(logs, stamp);
+    CreateDirectoryW(session.c_str(), nullptr);
+    for (const wchar_t* log : kLogs) {
+        MoveFileExW(Join(game, log).c_str(), Join(session, log).c_str(),
+                    MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED);
+    }
+}
+
+/* The diagnostics switch of the installed patch: [Debug] Diagnostics of wiz8ws.ini, read as
+   the loader reads it (not 0 = on); no file or no line = off. */
+bool DiagnosticsOn(const std::wstring& game)
+{
+    return GetPrivateProfileIntW(L"Debug", L"Diagnostics", 0, Join(game, L"wiz8ws.ini").c_str()) != 0;
+}
+
+/* Writes the diagnostics switch into wiz8ws.ini, only when it differs (so a file left as the
+   package has it stays byte for byte the package's). */
+void SetDiagnostics(const std::wstring& game, bool on)
+{
+    if (DiagnosticsOn(game) != on) {
+        WritePrivateProfileStringW(L"Debug", L"Diagnostics", on ? L"1" : L"0",
+                                   Join(game, L"wiz8ws.ini").c_str());
+    }
+}
+
 Result Uninstall(HWND owner, const std::wstring& game, bool quiet)
 {
     if (IsNewerFormat(game)) {
@@ -878,6 +976,9 @@ Result Uninstall(HWND owner, const std::wstring& game, bool quiet)
         return RES_FAILED;
     }
     DeleteFileW(manifest.c_str());
+    if (quiet) {
+        KeepLastSessionLogs(game);
+    }
     /* logs written by the patch itself */
     for (const wchar_t* log : {L"wiz8ws.log", L"wiz8hy.log", L"wiz8wide.log"}) {
         DeleteFileW(Join(game, log).c_str());
@@ -887,13 +988,17 @@ Result Uninstall(HWND owner, const std::wstring& game, bool quiet)
         std::wstring keep = Join(game, L"wiz8wide.ini.keep");
         SetFileAttributesW(keep.c_str(), FILE_ATTRIBUTE_NORMAL);
         DeleteFileW(keep.c_str());
+        /* logs of earlier sessions: an update keeps them, they may be wanted for a report */
+        RemoveDiagnosticLogs(game);
         MessageBoxW(owner, Tr(T_DONE_UNINSTALL), kTitle, MB_ICONINFORMATION);
     }
     return RES_OK;
 }
 
 
-Result Install(HWND owner, const std::wstring& game)
+/* diagnostics: the "Diagnostics mode" choice - 1 on, 0 off, -1 keep what the installed
+   wiz8ws.ini has (off when there is none: a fresh install). */
+Result Install(HWND owner, const std::wstring& game, int diagnostics)
 {
     std::wstring files = Join(ExeDir(), L"files");
     if (!DirExists(files)) {
@@ -960,12 +1065,23 @@ Result Install(HWND owner, const std::wstring& game)
     }
     SetFileAttributesW(keep.c_str(), FILE_ATTRIBUTE_NORMAL);
     bool disabled = GetPrivateProfileIntW(L"General", L"Enabled", 1, ws_ini.c_str()) == 0;
-    auto restore_settings = [&]() {
+    /* the diagnostics switch as it is now (read before the quiet uninstall removes wiz8ws.ini) */
+    bool diagnostics_was = DiagnosticsOn(game);
+    bool diagnostics_on = diagnostics < 0 ? diagnostics_was : diagnostics != 0;
+    /* installed: the chosen diagnostics value; failed: the previous one, kept for the next
+       attempt like Enabled=0 (nothing is written for an off switch, so a failed fresh install
+       leaves no wiz8ws.ini behind) */
+    auto restore_settings = [&](bool installed_ok) {
         if (kept && CopyFileW(keep.c_str(), ini.c_str(), FALSE)) {
             DeleteFileW(keep.c_str());
         }
         if (disabled) {
             WritePrivateProfileStringW(L"General", L"Enabled", L"0", ws_ini.c_str());
+        }
+        if (installed_ok) {
+            SetDiagnostics(game, diagnostics_on);
+        } else if (diagnostics_was) {
+            SetDiagnostics(game, true);
         }
     };
 
@@ -1007,7 +1123,7 @@ Result Install(HWND owner, const std::wstring& game)
         continue;
     failed_file:
         RemoveInstalled(game, installed);
-        restore_settings();
+        restore_settings(false);
         MessageBoxW(owner,
                     Tr(previous.empty() && !overwrote_patch ? T_COPY_FAILED : T_UPDATE_FAILED, dst)
                         .c_str(),
@@ -1024,7 +1140,7 @@ Result Install(HWND owner, const std::wstring& game)
     if (!WriteLines(manifest, installed)) {
         RemoveInstalled(game, installed);
         DeleteFileW(manifest.c_str());
-        restore_settings();
+        restore_settings(false);
         MessageBoxW(owner,
                     Tr(previous.empty() && !overwrote_patch ? T_COPY_FAILED : T_UPDATE_FAILED,
                        manifest)
@@ -1033,7 +1149,7 @@ Result Install(HWND owner, const std::wstring& game)
         return RES_FAILED;
     }
     /* the player's settings over the defaults just copied */
-    restore_settings();
+    restore_settings(true);
     std::wstring done = order < 0   ? Tr(T_DONE_UPDATE, previous, kVersion)
                         : order > 0 ? Tr(T_DONE_ROLLBACK, previous, kVersion)
                                     : Tr(T_DONE_INSTALL, kVersion);
@@ -1041,12 +1157,24 @@ Result Install(HWND owner, const std::wstring& game)
     return RES_OK;
 }
 
-/* Restart itself with administrator rights for this folder and action. */
-bool RelaunchElevated(HWND owner, const std::wstring& game, const wchar_t* action)
+/* Restart itself with administrator rights for this folder and action (option: an extra switch
+   after the folder, such as --diagnostics, or 0). */
+bool RelaunchElevated(HWND owner, const std::wstring& game, const wchar_t* action,
+                      const wchar_t* option)
 {
     wchar_t exe[MAX_PATH];
     GetModuleFileNameW(0, exe, MAX_PATH);
-    std::wstring args = std::wstring(action) + L" \"" + game + L"\"";
+    /* Backslashes right before the closing quote are doubled: the command line parser reads
+       2n of them + '"' as n backslashes, but "D:\" (a drive root) as D: plus a quote. */
+    std::wstring quoted = game;
+    for (size_t i = game.size(); i > 0 && game[i - 1] == L'\\'; --i) {
+        quoted += L'\\';
+    }
+    std::wstring args = std::wstring(action) + L" \"" + quoted + L"\"";
+    if (option) {
+        args += L" ";
+        args += option;
+    }
     SHELLEXECUTEINFOW info = {};
     info.cbSize = sizeof(info);
     info.fMask = SEE_MASK_NOCLOSEPROCESS;
@@ -1073,13 +1201,18 @@ enum {
     ID_INSTALL,
     ID_UNINSTALL,
     ID_EXIT,
-    ID_STATUS
+    ID_STATUS,
+    ID_DIAGNOSTICS
 };
 
 HWND g_folder;
 HWND g_status;
+HWND g_diagnostics;
 HWND g_install;
 HWND g_uninstall;
+/* the folder the diagnostics checkbox was last read for: the box shows that folder's
+   wiz8ws.ini value and is not reset while the player only clicks it */
+std::wstring g_diagnostics_folder = L"\x01"; /* never a folder: the first update reads it */
 HFONT g_font;
 int g_dpi = 96;
 
@@ -1088,11 +1221,20 @@ int Dpi(int value)
     return MulDiv(value, g_dpi, 96);
 }
 
-void UpdateStatus()
+/* reread: after an install or uninstall, when the folder's file has changed */
+void UpdateStatus(bool reread = false)
 {
     wchar_t buffer[MAX_PATH * 2];
     GetWindowTextW(g_folder, buffer, MAX_PATH * 2);
     std::wstring game = buffer;
+    /* the diagnostics checkbox shows what the folder has now (off for a fresh install); the
+       install keeps whatever the player leaves it at */
+    std::wstring trimmed = TrimSlashes(game);
+    if (reread || lstrcmpiW(trimmed.c_str(), g_diagnostics_folder.c_str()) != 0) {
+        g_diagnostics_folder = trimmed;
+        bool on = IsGameDir(trimmed) && DiagnosticsOn(trimmed);
+        SendMessageW(g_diagnostics, BM_SETCHECK, on ? BST_CHECKED : BST_UNCHECKED, 0);
+    }
     std::wstring status;
     std::wstring installed = IsGameDir(game) ? InstalledVersion(game) : std::wstring();
     int order = installed.empty() ? 0 : CompareVersions(installed, kVersion);
@@ -1123,6 +1265,7 @@ void UpdateStatus()
     }
     SetWindowTextW(g_install, action.c_str());
     EnableWindow(g_install, !newer_format);
+    EnableWindow(g_diagnostics, !newer_format);
     EnableWindow(g_uninstall, !installed.empty() && !newer_format);
 }
 
@@ -1153,14 +1296,16 @@ void RunAction(HWND window, bool install)
         MessageBoxW(window, Tr(T_NOT_GAME), kTitle, MB_ICONERROR);
         return;
     }
+    bool diagnostics = SendMessageW(g_diagnostics, BM_GETCHECK, 0, 0) == BST_CHECKED;
     if (!CanWrite(game)) {
-        RelaunchElevated(window, game, install ? L"--install" : L"--uninstall");
+        RelaunchElevated(window, game, install ? L"--install" : L"--uninstall",
+                         install ? (diagnostics ? L"--diagnostics" : L"--no-diagnostics") : 0);
     } else if (install) {
-        Install(window, game);
+        Install(window, game, diagnostics ? 1 : 0);
     } else {
         Uninstall(window, game, false);
     }
-    UpdateStatus();
+    UpdateStatus(true);
 }
 
 HWND AddControl(HWND parent, const wchar_t* cls, const wchar_t* text, DWORD style, int x, int y,
@@ -1188,11 +1333,14 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lpa
         AddControl(window, L"BUTTON", Tr(T_BROWSE), BS_PUSHBUTTON | WS_TABSTOP, 464, 77, 100, 26,
                    ID_BROWSE);
         g_status = AddControl(window, L"STATIC", L"", 0, 16, 112, 548, 50, ID_STATUS);
+        /* [Debug] Diagnostics of wiz8ws.ini (the README explains it) */
+        g_diagnostics = AddControl(window, L"BUTTON", Tr(T_DIAGNOSTICS), BS_AUTOCHECKBOX | WS_TABSTOP,
+                                   16, 166, 548, 22, ID_DIAGNOSTICS);
         g_install = AddControl(window, L"BUTTON", Tr(T_INSTALL), BS_DEFPUSHBUTTON | WS_TABSTOP, 16,
-                               166, 210, 32, ID_INSTALL);
+                               198, 210, 32, ID_INSTALL);
         g_uninstall = AddControl(window, L"BUTTON", Tr(T_UNINSTALL), BS_PUSHBUTTON | WS_TABSTOP,
-                                 236, 166, 160, 32, ID_UNINSTALL);
-        AddControl(window, L"BUTTON", Tr(T_EXIT), BS_PUSHBUTTON | WS_TABSTOP, 464, 166, 100, 32,
+                                 236, 198, 160, 32, ID_UNINSTALL);
+        AddControl(window, L"BUTTON", Tr(T_EXIT), BS_PUSHBUTTON | WS_TABSTOP, 464, 198, 100, 32,
                    ID_EXIT);
         std::vector<std::wstring> games = FindGames();
         for (const std::wstring& game : games) {
@@ -1253,15 +1401,33 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show)
     PickLanguage();
     CoInitializeEx(0, COINIT_APARTMENTTHREADED);
 
-    /* restart with rights: Wiz8WideSetup.exe --install|--uninstall "folder" */
+    /* restart with rights, or a run without the window:
+       Wiz8WideSetup.exe --install|--uninstall "folder" [--diagnostics|--no-diagnostics]
+       (the diagnostics switch only matters for --install; without it the installed value is
+       kept, a fresh install gets it off) */
     int argc = 0;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     if (argv && argc >= 3) {
         std::wstring action = argv[1];
         std::wstring game = TrimSlashes(argv[2]);
+        int diagnostics = -1;
+        bool bad = false;
+        for (int i = 3; i < argc; ++i) {
+            std::wstring option = argv[i];
+            if (option == L"--diagnostics") {
+                diagnostics = 1;
+            } else if (option == L"--no-diagnostics") {
+                diagnostics = 0;
+            } else {
+                bad = true;
+            }
+        }
         LocalFree(argv);
+        if (bad) {
+            return 2;
+        }
         if (action == L"--install") {
-            return Install(0, game) == RES_OK ? 0 : 1;
+            return Install(0, game, diagnostics) == RES_OK ? 0 : 1;
         }
         if (action == L"--uninstall") {
             return Uninstall(0, game, false) == RES_OK ? 0 : 1;
@@ -1285,7 +1451,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show)
     HDC screen = GetDC(0);
     g_dpi = GetDeviceCaps(screen, LOGPIXELSY);
     ReleaseDC(0, screen);
-    RECT rect = {0, 0, Dpi(580), Dpi(214)};
+    RECT rect = {0, 0, Dpi(580), Dpi(246)};
     DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
     AdjustWindowRect(&rect, style, FALSE);
     HWND window = CreateWindowW(L"Wiz8WideSetup", kTitle, style, CW_USEDEFAULT, CW_USEDEFAULT,

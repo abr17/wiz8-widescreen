@@ -1,5 +1,7 @@
-param([string]$Exe, [string]$Folder, [ValidateSet('none', 'install', 'uninstall')][string]$Click = 'none', [string]$Shot, [string]$Answer = 'yes', [string]$BoxShot)
-# Opens the installer window, types the folder, reads the install button and status texts,
+param([string]$Exe, [string]$Folder, [ValidateSet('none', 'install', 'uninstall')][string]$Click = 'none', [string]$Shot, [string]$Answer = 'yes', [string]$BoxShot,
+      [ValidateSet('keep', 'on', 'off')][string]$Diag = 'keep')
+# Opens the installer window, types the folder, reads the install button, status texts and the
+# diagnostics checkbox, optionally sets that checkbox (-Diag on|off, as the player would),
 # optionally takes a window-only screenshot, optionally presses a button and answers the boxes.
 Add-Type -ReferencedAssemblies System.Drawing @'
 using System; using System.Text; using System.Runtime.InteropServices; using System.Drawing;
@@ -36,9 +38,10 @@ public static class G {
 }
 '@
 function Boxes($p) {
-    # answers every message box until none appears for 3 s (the first one may take up to 20 s)
-    $seen = 0; $idle = 0
-    while (($seen -eq 0 -and $idle -lt 100) -or ($seen -gt 0 -and $idle -lt 15)) {
+    # answers every message box until none appears for 3 s (the first one may take up to 20 s;
+    # after a question answered "yes" the install runs first, so its done box gets up to 60 s)
+    $seen = 0; $idle = 0; $limit = 15
+    while (($seen -eq 0 -and $idle -lt 100) -or ($seen -gt 0 -and $idle -lt $limit)) {
         $h = [G]::Find([uint32]$p.Id, '#32770')
         if ($h -ne [IntPtr]::Zero) {
             Start-Sleep -Milliseconds 300
@@ -47,6 +50,7 @@ function Boxes($p) {
             $yes = [G]::GetDlgItem($h, 6) -ne [IntPtr]::Zero
             $id = if ($yes) { if ($Answer -eq 'yes') { 6 } else { 7 } } else { 1 }
             if ($yes) { "  -> answered $Answer" }
+            $limit = if ($yes -and $Answer -eq 'yes') { 300 } else { 15 }
             if ([G]::GetDlgItem($h, $id) -eq [IntPtr]::Zero) { $id = 2 }
             [void][G]::PostMessage($h, 0x0111, [IntPtr]$id, [IntPtr]::Zero)
             Start-Sleep -Milliseconds 500
@@ -63,6 +67,9 @@ function Report($w) {
     "BUTTON: " + [G]::Item($w, 102)
     "UNINSTALL enabled: " + [G]::IsWindowEnabled([G]::GetDlgItem($w, 103))
     "STATUS: " + ([G]::Item($w, 105) -replace "`r`n", ' | ')
+    $box = [G]::GetDlgItem($w, 106)
+    # BM_GETCHECK
+    "DIAG: checked " + ([int][G]::SendMessage($box, 0x00F0, [IntPtr]::Zero, [IntPtr]::Zero) -eq 1) + ", enabled " + [G]::IsWindowEnabled($box)
 }
 [void][G]::SetProcessDPIAware()
 $p = Start-Process -FilePath $Exe -PassThru
@@ -74,6 +81,12 @@ $combo = [G]::GetDlgItem($w, 100)
 [void][G]::SendMessage($w, 0x0111, [IntPtr](100 -bor (5 -shl 16)), $combo)    # CBN_EDITCHANGE
 Start-Sleep -Milliseconds 300
 Report $w
+if ($Diag -ne 'keep') {
+    # BM_SETCHECK: the installer reads the box only when Install is pressed
+    $box = [G]::GetDlgItem($w, 106)
+    [void][G]::SendMessage($box, 0x00F1, [IntPtr]$(if ($Diag -eq 'on') { 1 } else { 0 }), [IntPtr]::Zero)
+    "DIAG set ${Diag}: checked " + ([int][G]::SendMessage($box, 0x00F0, [IntPtr]::Zero, [IntPtr]::Zero) -eq 1)
+}
 if ($Shot) { [G]::Shot($w, $Shot); "SHOT: $Shot" }
 if ($Click -ne 'none') {
     $id = if ($Click -eq 'install') { 102 } else { 103 }
