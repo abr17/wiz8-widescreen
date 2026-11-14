@@ -50,3 +50,8 @@ __pycache__/
 /docs/screens/wideopt/keyboard-768.jpg
 /docs/screens/wideopt/save-name-768.jpg
 /docs/screens/wideopt/save-wide-768.jpg
+
+# Set-up for AI agents that depends on the machine or on the person (docs\building.md has an example)
+/.mcp.json
+/.claude/
+/CLAUDE.local.md

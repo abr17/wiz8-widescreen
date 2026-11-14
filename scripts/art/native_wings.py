@@ -1,7 +1,7 @@
 r"""Native-stone wings for Data\Wide\WideFrame_<W>.sti (method C "edge-extend": the window's own
 marble continued outward). Since 1.0.2 this replaces the AI-painted marble; the shipped files
-were made with: python -I native_wings.py --edge makewings --out DIR (owner's choice 2026-10-22:
-native stone with make_wings.py's dark groove, shadow and bevel at the window edge), then
+were made with: python -I native_wings.py --edge makewings --out DIR (native stone with
+make_wings.py's dark groove, shadow and bevel at the window edge), then
 DIR\wings\WIDEFRAME_768/856.STI copied to assets\Data\WIDE. The review composites need the captures in
 build\tmp\native-wings\capture (not in git); without them only the wings are made.
 
@@ -64,13 +64,14 @@ import random
 import struct
 import sys
 
-sys.path.insert(0, r'C:\dev\wiz8-ws\scripts\art')
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 import artkit  # noqa: E402
 
-ROOT = r'C:\dev\wiz8-ws'
+ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 SLF_DEFAULT = os.path.join(ROOT, r'games\reference\Data\DATA.SLF')
 CAPTURE_DEFAULT = os.path.join(ROOT, r'build\tmp\native-wings\capture')
-TEMPLATE = os.path.join(ROOT, r'assets\Data\WIDE\WIDEFRAME_%d.STI')
+TEMPLATE = artkit.WIDE_TEMPLATE
 # orientations allowed per tile group: the unrotated stone of the CAMP item page (ip), the stats-page
 # panel (cm), the creation skills page (cg) and the automap frame (mb, map with WideAutomap=0) is on
 # screen in the 4:3 windows themselves, so only turned/flipped copies of it go into the wings

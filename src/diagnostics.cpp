@@ -512,11 +512,11 @@ bool InModule(HMODULE module, ULONG_PTR at)
 // A crash in the game's own code (Wiz8.exe, wiz8hy.dll) on the main thread never reaches the
 // unhandled-exception filter: the exe's CRT start-up frame (_except_handler3 with its scope
 // table in a writable section) is rejected by today's msvcrt, and the kernel ends the process
-// with no user-mode code running - the silent Arnika Road crash (2026-10-22). So a fatal
-// exception code there is written down when it is raised (first chance), marked as such: the
-// retail game handles none of these in its code (its only __try frames are the CRT ones), but
-// wiz8hy.dll may (the experimental menu animation's video decoder catches a fault in zlib and
-// goes on without the video), so a first-chance record is a crash only if the log ends there.
+// with no user-mode code running - the silent Arnika Road crash. So a fatal exception code
+// there is written down when it is raised (first chance), marked as such: the retail game
+// handles none of these in its code (its only __try frames are the CRT ones), but wiz8hy.dll
+// may (the experimental menu animation's video decoder catches a fault in zlib and goes on
+// without the video), so a first-chance record is a crash only if the log ends there.
 // This handler never handles anything itself: the game goes on or ends as without it.
 LONG CALLBACK FirstChanceCrash(EXCEPTION_POINTERS* info)
 {

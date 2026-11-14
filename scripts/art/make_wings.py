@@ -1,7 +1,7 @@
 """"Stone wings" image for UI windows: Data\\Wide\\WideFrame_<W>.STI.
 python make_wings.py <out.sti> <W> <map_border_0.png> [gen856.png]
 Without gen856.png the marble is taken from the game itself (automap frame, top panel
-of the right column), tiled with mirroring. With gen856.png (Astra extension, canvas 856)
+of the right column), tiled with mirroring. With gen856.png (generated extension, canvas 856)
 its margins are used (for W < 856 - the inner part of the margins). On top - a bevel at the edge
 of the 640 window and slight darkening toward the screen edges. The central 640 is black (unused)."""
 import os
@@ -19,7 +19,7 @@ if gen:
     gox = (gw - 640) // 2
 
     def source(x, y, side):
-        # side 0: column x on the left (0..ox-1), side 1: on the right; take Astra's columns nearest the window
+        # side 0: column x on the left (0..ox-1), side 1: on the right; take the generated columns nearest the window
         return grows[y][gox - ox + x][:3] if side == 0 else grows[y][gox + 640 + x][:3]
 else:
     _, _, mrows = artkit.read_png(mb)

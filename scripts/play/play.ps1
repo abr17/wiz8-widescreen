@@ -1,6 +1,6 @@
 # Helpers for "live" play (on top of game.ps1): held keys, a screenshot without the Windows
 # notification corner, a downscaled copy for viewing.
-#   . C:\dev\wiz8-ws\scripts\play\play.ps1
+#   . .\scripts\play\play.ps1   (from the workspace folder)
 #   Start-Play            # games\ru, Wiz8Runtime.exe, canvas 768
 #   Key 'W' 800           # hold the key for 0.8 s
 #   Snap 'name'           # docs\screens\play\<time>-name.png (+ _small.png 1280x800)

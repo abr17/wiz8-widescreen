@@ -13,8 +13,9 @@ Any mismatch is a place where the port behaves differently from the original.
   * It is compiled into the port: `RenderFrame` calls `W8DiffPortPoll()` once per frame
     (enabled by `wiz8wide.ini` `[Debug] DiffHarness=1`).
   * It is brought into the original by `w8diff.dll` (`scripts/w8diff/build_dll.ps1`, same
-    MSVC). With `wiz8ws.ini` `[Debug] DiffHarness=1`, `version.dll` (the patch) installs a hook
-    on `RenderFrame` (0x00426790) and calls `W8DiffRetailPoll` once per frame.
+    MSVC). With `wiz8ws.ini` `[Debug] DiffHarness=1` and `[Hybrid] Enabled=0`, `version.dll` (the
+    patch) installs a hook on `RenderFrame` (0x00426790) and calls `W8DiffRetailPoll` once per
+    frame (`scripts\w8diff\run.ps1` sets both).
 * Both sides wait for the file `w8diff_<retail|port>.req`, read the plan
   `w8diff_plan_<proc>.txt`, wait 60 frames on the game's main screen, run the cases
   (~150 ms per frame) and write `w8diff_out_<proc>.txt`, and at the end `w8diff_done_<proc>.txt`.

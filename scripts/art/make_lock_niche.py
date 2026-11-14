@@ -1,4 +1,4 @@
-"""Lockpick panel gaps from the original shaded niche (2026-10-16).
+"""Lockpick panel gaps from the original shaded niche.
 python -I make_lock_niche.py <lockpick_bottompanel_0.png> <out_dir> [--seed 7]
 
 The niche is the left 29 columns of image 0 of the info panel (LOCKPICK_BOTTOMPANEL.STI):
@@ -127,9 +127,9 @@ def native_grain(niche, rows_l):
 
 
 def gap_from_texture(tex_rows, width, niche, light, x_offset):
-    """Whole Astra texture (already downscaled to gap width x 92) -> gap.
+    """Whole generated texture (already downscaled to gap width x 92) -> gap.
     The texture's large blotches and fine grain are each matched to the original niche's spread
-    (Astra's grain is twice as strong and its blotches larger - that made the niche look foreign); color -
+    (the generated texture's grain is twice as strong and its blotches larger - that made the niche look foreign); color -
     mean color of the niche's flat part, then the niche lighting: shadow at the left edge and the per-row profile."""
     rows_l, cols_l, stats = light
     nat_lsd, nat_hsd = native_grain(niche, rows_l)
@@ -157,8 +157,8 @@ def main():
     ap.add_argument('panel0')
     ap.add_argument('out_dir')
     ap.add_argument('--seed', type=int, default=7)
-    ap.add_argument('--texture', default='', help='whole Astra texture (PNG); without it - niche grain')
-    ap.add_argument('--template', default=r'C:\dev\wiz8-ws\assets\Data\WIDE\WIDEFRAME_%d.STI')
+    ap.add_argument('--texture', default='', help='whole generated texture (PNG); without it - niche grain')
+    ap.add_argument('--template', default=artkit.WIDE_TEMPLATE)
     a = ap.parse_args()
     w0, h0, rows = read_png(a.panel0)
     assert h0 == HEIGHT, h0

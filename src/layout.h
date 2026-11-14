@@ -4,7 +4,7 @@
 
 // Where the game's 640x480 "virtual" screen lies on the real screen.
 //   Stretch  — stretched over the whole window (as in the original, but the mouse now hits correctly);
-//   Centered — 4:3 centered with bars at the sides (Phase 4).
+//   Centered — 4:3 centered with bars at the sides (hooks_hud.cpp).
 enum class HudLayout { Stretch, Centered };
 
 struct Block {

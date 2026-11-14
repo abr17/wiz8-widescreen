@@ -1,0 +1,52 @@
+name: Bug report
+description: The game with the patch, or the installer, does not work as it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The quickest way: run **Wiz8WideSetup.exe**, press **Report a problem...** and add the zip file it saves to your Desktop to this form. The file holds the patch's logs and a summary of your system, and the button fills in the version fields below.
+
+        This page is public. The logs and crash dumps contain folder names, so also your user name.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: What you see and at what moment (at the start, in the main menu, after loading a save, in a fight). The text of the error message, if there is one. What you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Report file
+      description: |
+        Drag the zip file from your Desktop into this field, or click the bar under the field and pick it. It must be a zip of up to 25 MB.
+
+        If the game closes by itself: first run Wiz8WideSetup.exe, tick "Diagnostics mode (for bug reports)", press "Reinstall" and play until it happens again. Then press "Report a problem...".
+  - type: input
+    id: version
+    attributes:
+      label: Patch version
+      description: The main menu shows it in the top right corner, for example "Widescreen v1.0.3".
+    validations:
+      required: true
+  - type: dropdown
+    id: game
+    attributes:
+      label: Game
+      options:
+        - GOG
+        - Steam
+        - Another version
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: The Windows version, or the Linux distribution with the Proton or Wine version.
+  - type: input
+    id: graphics
+    attributes:
+      label: Graphics card
+      description: Its name and, if you know it, the driver version.

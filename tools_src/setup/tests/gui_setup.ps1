@@ -1,8 +1,12 @@
-param([string]$Exe, [string]$Folder, [ValidateSet('none', 'install', 'uninstall')][string]$Click = 'none', [string]$Shot, [string]$Answer = 'yes', [string]$BoxShot,
-      [ValidateSet('keep', 'on', 'off')][string]$Diag = 'keep')
+param([string]$Exe, [string]$Folder, [ValidateSet('none', 'install', 'uninstall', 'report')][string]$Click = 'none', [string]$Shot, [string]$Answer = 'yes', [string]$BoxShot,
+      [ValidateSet('keep', 'on', 'off')][string]$Diag = 'keep', [string]$WorkingDirectory)
 # Opens the installer window, types the folder, reads the install button, status texts and the
 # diagnostics checkbox, optionally sets that checkbox (-Diag on|off, as the player would),
 # optionally takes a window-only screenshot, optionally presses a button and answers the boxes.
+# -Click report presses "Report a problem..."; with -Answer no its question is declined, so no
+# browser is started.
+# Without -Folder nothing is typed: the report shows the folder box as the installer filled it.
+# -WorkingDirectory: the folder the installer starts in (default: the current folder, as before).
 Add-Type -ReferencedAssemblies System.Drawing @'
 using System; using System.Text; using System.Runtime.InteropServices; using System.Drawing;
 public static class G {
@@ -64,6 +68,7 @@ function Boxes($p) {
 }
 function Report($w) {
     "TITLE: " + [G]::Text($w)
+    "FOLDER: [" + [G]::Item($w, 100) + "]"
     "BUTTON: " + [G]::Item($w, 102)
     "UNINSTALL enabled: " + [G]::IsWindowEnabled([G]::GetDlgItem($w, 103))
     "STATUS: " + ([G]::Item($w, 105) -replace "`r`n", ' | ')
@@ -72,13 +77,17 @@ function Report($w) {
     "DIAG: checked " + ([int][G]::SendMessage($box, 0x00F0, [IntPtr]::Zero, [IntPtr]::Zero) -eq 1) + ", enabled " + [G]::IsWindowEnabled($box)
 }
 [void][G]::SetProcessDPIAware()
-$p = Start-Process -FilePath $Exe -PassThru
+$start = @{ FilePath = $Exe; PassThru = $true }
+if ($WorkingDirectory) { $start.WorkingDirectory = $WorkingDirectory }
+$p = Start-Process @start
 $w = [IntPtr]::Zero
 for ($i = 0; $i -lt 50 -and $w -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 200; $w = [G]::Find([uint32]$p.Id, 'Wiz8WideSetup') }
 if ($w -eq [IntPtr]::Zero) { 'no window'; return }
-$combo = [G]::GetDlgItem($w, 100)
-[void][G]::SendMessage($combo, 0x000C, [IntPtr]::Zero, $Folder)               # WM_SETTEXT
-[void][G]::SendMessage($w, 0x0111, [IntPtr](100 -bor (5 -shl 16)), $combo)    # CBN_EDITCHANGE
+if ($PSBoundParameters.ContainsKey('Folder')) {
+    $combo = [G]::GetDlgItem($w, 100)
+    [void][G]::SendMessage($combo, 0x000C, [IntPtr]::Zero, $Folder)               # WM_SETTEXT
+    [void][G]::SendMessage($w, 0x0111, [IntPtr](100 -bor (5 -shl 16)), $combo)    # CBN_EDITCHANGE
+}
 Start-Sleep -Milliseconds 300
 Report $w
 if ($Diag -ne 'keep') {
@@ -89,7 +98,7 @@ if ($Diag -ne 'keep') {
 }
 if ($Shot) { [G]::Shot($w, $Shot); "SHOT: $Shot" }
 if ($Click -ne 'none') {
-    $id = if ($Click -eq 'install') { 102 } else { 103 }
+    $id = if ($Click -eq 'install') { 102 } elseif ($Click -eq 'report') { 107 } else { 103 }
     [void][G]::PostMessage($w, 0x0111, [IntPtr]$id, [IntPtr]::Zero)
     Boxes $p
     Start-Sleep -Milliseconds 500

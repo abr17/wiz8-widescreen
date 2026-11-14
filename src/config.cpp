@@ -16,10 +16,11 @@ Config LoadConfig(const char* iniPath)
     c.horPlus = GetPrivateProfileIntA("Display", "HorPlus", 1, iniPath) != 0;
     c.fixMouse = GetPrivateProfileIntA("Input", "FixMouse", 1, iniPath) != 0;
     c.fixAltTab = GetPrivateProfileIntA("Input", "FixAltTab", 1, iniPath) != 0;
-    c.logWindowCalls = GetPrivateProfileIntA("Debug", "LogWindowCalls", 1, iniPath) != 0;
+    c.logWindowCalls = GetPrivateProfileIntA("Debug", "LogWindowCalls", 0, iniPath) != 0;
     c.diffHarness = GetPrivateProfileIntA("Debug", "DiffHarness", 0, iniPath) != 0;
     c.diagnostics = GetPrivateProfileIntA("Debug", "Diagnostics", 0, iniPath) != 0;
-    c.hybrid = GetPrivateProfileIntA("Hybrid", "Enabled", 0, iniPath) != 0;
+    c.hybrid = GetPrivateProfileIntA("Hybrid", "Enabled", 1, iniPath) != 0;
     c.utf8FileNames = GetPrivateProfileIntA("General", "Utf8FileNames", 1, iniPath) != 0;
+    c.w8x = GetPrivateProfileIntA("D3D11", "Extensions", 1, iniPath) != 0;
     return c;
 }

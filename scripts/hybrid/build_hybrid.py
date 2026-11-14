@@ -20,6 +20,9 @@ wrapper: scripts\\hybrid\\build_hybrid.ps1)
    it starts; a pass moves the staged map, hooks and dll into build\\hybrid and removes it, any
    failure (guard, compile, link, trap) leaves it with the reason and the last good
    wiz8hy.dll + wiz8hy_hooks.txt in place.
+5. Mod check (check_mod_edits), before anything is compiled: the build fails when an annotated
+   function with a "Mod" comment is not in transplant (the game would run the original function
+   without the edit), unless mods_not_transplanted names it with a reason.
 """
 import argparse
 import bisect
@@ -933,6 +936,145 @@ def _owned_users(syms, owned, transplant, stub_addrs, img, data, code):
     return report, errors
 
 
+# --- "Mod" edits must reach the DLL ---------------------------------------------------------------
+# The fork marks its changes to the original's functions with a comment that has the word "Mod"
+# ("Mod: ...", "Mod (wide canvas): ...", "Mod fix (...): ..."; in lower case only as a label:
+# "mod: ...", "mod (...)", "/* mod */"), in the function or in the description above its
+# annotation. Such a change is in wiz8hy.dll only when the function is in "transplant": the
+# surgery binds every other annotated function to the original code, the build succeeds and
+# the game runs without the change. So a marked function that is not transplanted fails the
+# build, unless "mods_not_transplanted" names it with the reason (an edit that is meant for
+# the internal port only).
+MOD_MARK = re.compile(r'\bMod\b|\bmod\b(?=\s*(?:[:(,]|$))')
+
+
+def _code_and_comments(lines):
+    """Each source line as (code, comment text): the code without comments, preprocessor lines
+    and the contents of string and character literals (what is left to follow braces with), and
+    the text of the comments on the line."""
+    out, in_block, in_pp = [], False, False
+    for raw in lines:
+        pp = not in_block and (in_pp or raw.lstrip().startswith('#'))
+        if pp:
+            in_pp = raw.rstrip().endswith('\\')
+        code, text, k = [], [], 0
+        while k < len(raw):
+            if in_block:
+                e = raw.find('*/', k)
+                if e < 0:
+                    text.append(raw[k:])
+                    break
+                text.append(raw[k:e] + ' ')
+                in_block, k = False, e + 2
+            elif raw.startswith('//', k):
+                text.append(raw[k + 2:])
+                break
+            elif raw.startswith('/*', k):
+                in_block, k = True, k + 2
+            elif raw[k] in '"\'':
+                q, e = raw[k], k + 1
+                while e < len(raw) and raw[e] != q:
+                    e += 2 if raw[e] == '\\' else 1
+                code.append(q + q)
+                k = e + 1
+            else:
+                code.append(raw[k])
+                k += 1
+        out.append(('' if pp else ''.join(code), ''.join(text)))
+    return out
+
+
+def mod_edits(lines, funcs):
+    """The "Mod" comments of the annotated functions of one source file. lines: its text; funcs:
+    its // FUNCTION annotations (scan_lines). A function is the comment lines directly above its
+    annotation (its description) and the lines from the annotation to the brace that closes its
+    body (to the ';' of a declaration without one), never past the description of the next
+    annotated function. -> [(annotation, line number, the comment's text)]"""
+    split = _code_and_comments(lines)
+    order = sorted(funcs, key=lambda f: f['line'])
+    heads = []
+    for f in order:
+        head = f['line'] - 1
+        while head > 0 and lines[head - 1].strip() and not split[head - 1][0].strip() \
+                and not lines[head - 1].lstrip().startswith('#'):
+            head -= 1
+        heads.append(head)
+    out = []
+    for k, f in enumerate(order):
+        first = f['line'] - 1
+        limit = heads[k + 1] if k + 1 < len(order) else len(lines)
+        depth, opened, last = 0, False, limit - 1
+        for j in range(first + 1, limit):
+            closed = False
+            for ch in split[j][0]:
+                if ch == '{':
+                    depth, opened = depth + 1, True
+                elif ch == '}':
+                    depth -= 1
+                    closed = opened and depth <= 0
+                elif ch == ';':
+                    closed = not opened
+                if closed:
+                    break
+            if closed:
+                last = j
+                break
+        for j in range(heads[k], last + 1):
+            if MOD_MARK.search(split[j][1]):
+                out.append((f, j + 1, split[j][1].strip()))
+    return out
+
+
+def check_mod_edits(funcs, transplant, cfg, read_lines=None):
+    """Before compiling: every annotated function with a "Mod" comment is transplanted, or
+    listed in mods_not_transplanted ({address: reason}); a listed address that needs no entry
+    (no such comment, or the function is transplanted) is an error too, so the list stays true.
+    funcs: all // FUNCTION annotations; read_lines(file) -> the lines of a source file.
+    -> (report lines, error lines)"""
+    report, errors = [], []
+    allowed = cfg.get('mods_not_transplanted', {})
+    if not isinstance(allowed, dict):
+        errors.append('mods_not_transplanted must map each function address to the reason its edit '
+                      'stays out of wiz8hy.dll')
+        allowed = {}
+    reasons = {}
+    for key, reason in sorted(allowed.items()):
+        try:
+            reasons[int(key, 16)] = reason
+        except ValueError:
+            errors.append('mods_not_transplanted: %r is not an address' % key)
+            continue
+        if not isinstance(reason, str) or not reason.strip():
+            errors.append('mods_not_transplanted: %s has no reason' % key)
+    if read_lines is None:
+        def read_lines(rel):
+            with open(os.path.join(SRC, rel), encoding='utf-8', errors='replace') as f:
+                return f.read().split('\n')
+    by_file = collections.defaultdict(list)
+    for f in funcs:
+        by_file[f['file']].append(f)
+    hits = collections.defaultdict(list)   # address -> [(annotation, line, text)]
+    for rel in sorted(by_file):
+        for f, line, text in mod_edits(read_lines(rel), by_file[rel]):
+            if f['addr'] not in transplant:
+                hits[f['addr']].append((f, line, text))
+    for addr, found in sorted(hits.items()):
+        where = '; '.join('%s:%d (%s)' % (f['file'], line, text[:60]) for f, line, text in found)
+        if addr in reasons:
+            report.append('Mod edit not in wiz8hy.dll, 0x%08x (%s:%d): %s' % (
+                addr, found[0][0]['file'], found[0][1], str(reasons[addr]).strip()))
+        else:
+            errors.append('0x%08x %s has a "Mod" edit but is not in "transplant": the game would run '
+                          'the original function without it - %s. Add the address to "transplant", '
+                          'or to "mods_not_transplanted" with the reason' % (
+                              addr, found[0][0]['name'], where))
+    for addr in sorted(set(reasons) - set(hits)):
+        errors.append('mods_not_transplanted: 0x%08x needs no entry (%s)' % (
+            addr, 'the function is transplanted' if addr in transplant
+            else 'no annotated function at that address has a "Mod" comment'))
+    return report, errors
+
+
 # --- outputs: staged, published only after every check passed ------------------------------------
 STAGE = os.path.join(OUT, 'staging')
 GUARD_FAILED = os.path.join(OUT, 'GUARD_FAILED')
@@ -966,11 +1108,11 @@ def note_build_stopped(marker, reason):
             f.write('\nThe build stopped: %s\n' % reason)
 
 
-def fail_guard(lines, message):
+def fail_guard(lines, message, check='binding guard', section='Game variables'):
     write_guard_failed(GUARD_FAILED, lines)
     print('\n'.join(lines))
-    raise SystemExit('binding guard: %s, see docs\\hybrid.md "Game variables" (%s written)' % (
-        message, os.path.relpath(GUARD_FAILED, ROOT)))
+    raise SystemExit('%s: %s, see docs\\hybrid.md "%s" (%s written)' % (
+        check, message, section, os.path.relpath(GUARD_FAILED, ROOT)))
 
 
 def publish(stage, out, marker):
@@ -1091,6 +1233,38 @@ def guard_selftest():
     code = _fake_code(prog, [0x4000, 0x4020])
     if code.extent(0x4000) != (0x4000, 0x4005) or code.owner(0x4011):
         bad.append('extent: ran through the padding after a call: 0x%x..0x%x' % code.extent(0x4000))
+    # "Mod" edits: only comments inside an annotated function or in the description directly
+    # above its annotation count (not a literal, a variable named mod, a helper without an
+    # annotation or a comment that stands apart after the function), also "Mod" with words
+    # before the colon; a function whose braces do not balance (D) ends where the description
+    # of the next one begins; an edit in a function that is not transplanted is an error unless
+    # the config gives the reason, and an entry that is not needed is an error
+    lines = ['// FUNCTION: WIZ8 0x00401000', 'void A(void)', '{', '    /* Mod: changed */',
+             '    B("Mod: text {");', '}', '/* Mod: a helper of our own */', 'static void Helper(void) {}',
+             '// FUNCTION: WIZ8 0x00401010', 'int B(const char* s);   // mod: a declaration',
+             '/* Mod: a note that stands apart */', '', '/* What C does.',
+             '   Mod: in its description */', '// FUNCTION: WIZ8 0x00401020', 'void C(void)', '{',
+             '    int mod = 1; /* the remainder mod 8 */', '    if (mod) { } /* Mod (wide canvas):',
+             '       two lines. Mod fix (for the port): one more */', '}',
+             '// FUNCTION: WIZ8 0x00401030', 'void D(void)', '{', '#if X', '    if (a) {', '#else',
+             '    if (b) {', '#endif', '    }', '}', '', '/* Mod: in the description of E */',
+             '// FUNCTION: WIZ8 0x00401040', 'void E(void) {}']
+    funcs, _ = scan_lines(lines, 'selftest.cpp')
+    got = [(f['addr'], n) for f, n, _ in mod_edits(lines, funcs)]
+    if got != [(0x401000, 4), (0x401010, 10), (0x401020, 14), (0x401020, 19), (0x401020, 20),
+               (0x401040, 33)]:
+        bad.append('mod_edits: %r, want lines 4, 10, 14, 19, 20 and 33' % got)
+    for cfg, want_report, want_errors in [
+            ({}, 0, ['0x00401010 B has', '0x00401020 C has']),
+            ({'mods_not_transplanted': {'0x00401010': 'for the port only', '0x00401020': ' '}}, 2,
+             ['0x00401020 has no reason']),
+            ({'mods_not_transplanted': {'0x00401010': 'a', '0x00401020': 'b', '0x00401000': 'c',
+                                        '0x00409990': 'd'}}, 2,
+             ['0x00401000 needs no entry (the function is transplanted)', '0x00409990 needs no entry (no '])]:
+        report, errs = check_mod_edits(funcs, {0x401000, 0x401040}, cfg, read_lines=lambda rel: lines)
+        if len(report) != want_report or len(errs) != len(want_errors) or \
+                any(w not in e for w, e in zip(want_errors, errs)):
+            bad.append('check_mod_edits(%r): report %r, errors %r' % (cfg, report, errs))
     # publishing: a failed guard leaves the last good pair; a pass replaces it and the marker goes
     tmp = os.path.join(OUT, 'selftest')
     try:
@@ -1212,6 +1386,13 @@ def main():
     owned, ann_errors = check_annotations(syms, cfg)
     if ann_errors:
         fail_guard(ann_errors, '%d annotation error(s)' % len(ann_errors))
+    mod_report, mod_errors = check_mod_edits(syms.funcs, transplant, cfg)
+    if mod_report:
+        print('\n'.join(mod_report))
+    if mod_errors:
+        fail_guard(mod_errors, '%d error(s): a "Mod" edit would be missing from wiz8hy.dll, or '
+                               'mods_not_transplanted is out of date' % len(mod_errors),
+                   'Mod check', 'How to change a game function')
     for n in PAIR:   # stale staged files from an earlier run that failed
         if os.path.exists(os.path.join(STAGE, n)):
             os.remove(os.path.join(STAGE, n))

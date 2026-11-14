@@ -1,5 +1,5 @@
 # Full-screen screenshot into docs\screens\<folder>\ (default: baseline).
-# Usage: C:\dev\wiz8-ws\scripts\play\shot.ps1 [-Folder baseline] [-Delay 3]
+# Usage: .\scripts\play\shot.ps1 [-Folder baseline] [-Delay 3]
 param([string]$Folder = 'baseline', [int]$Delay = 0)
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -Namespace W -Name Dpi -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetProcessDPIAware();'

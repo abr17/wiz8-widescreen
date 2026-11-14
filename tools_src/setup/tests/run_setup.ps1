@@ -1,5 +1,6 @@
-param([string]$Exe, [string[]]$SetupArgs, [string]$Answer = 'yes')
+param([string]$Exe, [string[]]$SetupArgs, [string]$Answer = 'yes', [string]$WorkingDirectory)
 # Runs the installer with arguments, reads each message box text and answers it.
+# -WorkingDirectory: the folder it starts in (default: the current folder, as before).
 Add-Type @'
 using System; using System.Text; using System.Runtime.InteropServices; using System.Collections.Generic;
 public static class Dlg {
@@ -19,7 +20,9 @@ public static class Dlg {
     return found; }
 }
 '@
-$p = Start-Process -FilePath $Exe -ArgumentList $SetupArgs -PassThru
+$start = @{ FilePath = $Exe; ArgumentList = $SetupArgs; PassThru = $true }
+if ($WorkingDirectory) { $start.WorkingDirectory = $WorkingDirectory }
+$p = Start-Process @start
 while (-not $p.HasExited) {
     $h = [Dlg]::Find([uint32]$p.Id)
     if ($h -ne [IntPtr]::Zero) {

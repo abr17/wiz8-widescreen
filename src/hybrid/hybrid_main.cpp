@@ -1,4 +1,4 @@
-// Hybrid (trial, 2026-10-13): the original Wiz8.exe + port functions.
+// Hybrid: the original Wiz8.exe + port functions.
 //
 // wiz8hy.dll is built by scripts\hybrid\build_hybrid.ps1 from the port sources: everything
 // that exists in the original is bound to its addresses, while the functions from scripts\hybrid\transplant_wide.json are ours.

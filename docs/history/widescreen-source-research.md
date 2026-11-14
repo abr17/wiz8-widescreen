@@ -4,7 +4,7 @@
 
 ######## toolchain: how the decomp builds the runnable Wiz8Runtime.exe, and whether VC6 c
 BLOCKERS: VC6 SP5 is not present and must be obtained. The only path the repo automates is a git clone of archaic-msvc/msvc600_sp5: unlicensed Microsoft binaries, legally gray. The legal route is an owned VS6 disc or a subscription download, plus vs6sp5.exe. | Not verified that VC6 cl, link, nmake and rc run correctly on Windows 11 26300 under WOW64. Strong expectation, but untested. Watch for problems with mspdb60.dll / PDB handling (/PDBTYPE:SEPT), and with long paths or paths containing spaces. | Not verified that CMake 4.4.4 still supports MSVC_VERSION 1200 with NMake Makefiles. The repo pins 3.26.6. The fallback is a portable cmake-3.26.6-windows-i386.zip (tens of MB) inside Tools. | Ninja is not usable as-is: VC6 cl has no /showIncludes, so the dependency scan fails. Use VC6's own nmake.exe ('NMake Makefiles') or jom ('NMake Makefiles JOM'). | The Python driver (uv run wiz8) does not run on Windows: it imports fcntl and calls docker. We need our own driver script, including a port of the stdlib-only coff_archive.named_iat_archive to generate sr-assert-import.lib. | The top-level CMakeLists always configures srext_jpegimporter, srext_unzip and tests/differential. Configure needs the IJG jpeg-6 and Info-ZIP 5.4 source trees (small downloads), or a local change that skips those subdirectories (which would modify the decomp copy). | ddraw.lib and dxguid.lib are assumed to be in VC98\Lib. Not confirmed, because the toolchain is not available locally. | Licensing: the decomp has no license file and src/sgp is non-commercial (SFI). That is fine for a personal mod, but it limits redistribution of a rebuilt exe. | Unknown whether the recovered code is complete enough for Wiz8Runtime.exe to link with no unresolved symbols at the current commit. The README claims it does; this cannot be confirmed without building.
-REC: Build natively and skip Docker and Wine. Treat VC6 as a portable folder, C:\dev\wiz8-ws\Tools\msvc600, holding VC98 and Common. The owner must decide how to get it; prefer an owned VS6 disc + SP5 over the unlicensed GitHub mirror. Then write a small driver, Tools\vc6env.ps1 plus build-runtime.ps1, that does the following:
+REC: Build natively and skip Docker and Wine. Treat VC6 as a portable folder, Tools\msvc600, holding VC98 and Common. The owner must decide how to get it; prefer an owned VS6 disc + SP5 over the unlicensed GitHub mirror. Then write a small driver, Tools\vc6env.ps1 plus build-runtime.ps1, that does the following:
 
 (1) Set session-only environment variables:
    PATH = Tools\msvc600\VC98\Bin;Tools\msvc600\Common\MSDev98\Bin;Tools\cmake\bin;%PATH%
@@ -12,7 +12,7 @@ REC: Build natively and skip Docker and Wine. Treat VC6 as a portable folder, C:
    LIB = VC98\Lib;VC98\MFC\Lib
    TMP and TEMP pointed inside the workspace.
 
-(2) Unpack zlib-1.0.4, plus jpeg-6 and unzip540 with the zcrypt28 crypt.c/.h overlay, under C:\dev\wiz8-ws\build\deps. All are small and sha256-pinned in config/build-inputs.yml.
+(2) Unpack zlib-1.0.4, plus jpeg-6 and unzip540 with the zcrypt28 crypt.c/.h overlay, under build\deps. All are small and sha256-pinned in config/build-inputs.yml.
 
 (3) Generate build\vc6\sr-assert-import.lib with a 1:1 port of tools/wiz8decomp/binary/coff_archive.py. Run it with the system python using -I, or rewrite it in PowerShell.
 
@@ -67,7 +67,7 @@ BLOCKERS: Headers and CRT for linking: Tools has the compiler and linker but no 
 REC: clang-cl with the MSVC ABI is a go; llvm-mingw's GNU ABI is a no-go (Itanium name mangling cannot call sr.dll's 461 MSVC-mangled thiscall imports, and Microsoft ABI is refused on the gnu triple).
 
 Suggested order:
-(1) First consider not switching compilers at all. Get the archaic-msvc/msvc600_sp5 tree (pinned commit b0b07e29) into C:\dev\wiz8-ws\Tools\vc6 and run VC6 natively on Windows (Win32 cl/link, no Wine or Docker) with a portable CMake 3.26.6 and jom, as the Dockerfile pins. This is the original toolchain: zero ABI or UB risk, and the decomp's CMake mostly works as written (the Python glue for sr-assert-import.lib and the ZLIB_SOURCE checkout must be redone by hand).
+(1) First consider not switching compilers at all. Get the archaic-msvc/msvc600_sp5 tree (pinned commit b0b07e29) into Tools\vc6 and run VC6 natively on Windows (Win32 cl/link, no Wine or Docker) with a portable CMake 3.26.6 and jom, as the Dockerfile pins. This is the original toolchain: zero ABI or UB risk, and the decomp's CMake mostly works as written (the Python glue for sr-assert-import.lib and the ZLIB_SOURCE checkout must be redone by hand).
 (2) If VC6 is unacceptable, use clang-cl from the existing Tools\llvm-mingw (clang-23 --driver-mode=cl --target=i686-pc-windows-msvc, ld.lld -flavor link, llvm-lib) with the VC6 headers (-imsvc VC98\Include) plus the repo's tools/lint/include shims. That is the configuration CI already compiles, so source changes stay minimal. Turn the existing clang-cl-i686.cmake into a linking toolchain:
 - remove the FATAL_ERROR at CMakeLists.txt:12-14;
 - replace lib.exe and cvtres.exe with llvm-lib and llvm-rc/llvm-cvtres;
@@ -141,7 +141,7 @@ Critic review: Wizardry 8 widescreen, decomp-based options (research only, no fi
 
 ## 1. What I checked myself
 
-**A. A native Windows build inside C:\dev\wiz8-ws is possible, but nothing proves it has ever been done**
+**A. A native Windows build inside the workspace is possible, but nothing proves it has ever been done**
 - `ref\wizardry-8-decomp\CMakeLists.txt:11-14`: if the build is not an analysis build and the compiler is not MSVC, configure stops with FATAL_ERROR. Confirmed. VC6 cl counts as MSVC to CMake, so running native VC6 passes this check. clang-cl would need this block removed or WIZ8_ANALYSIS_BUILD set, but then the product targets are not created at all.
 - `tests\runtime\targets.cmake:41-53`: WIZ8_RUNTIME links without /FORCE:UNRESOLVED. Confirmed. `src\wiz8\CMakeLists.txt:94`: only the comparison target WIZ8 uses /FORCE:UNRESOLVED.
 - **Gap all reports missed: CI never builds WIZ8_RUNTIME.**
@@ -244,12 +244,12 @@ Track B (gate): get Wiz8Runtime.exe building natively with VC6. If it builds and
 Track A only (DLL, centered canvas, partial edge use): main menu 1-2 days, HUD 5-8 days. It does not give the owner's goal of a truly wide 2D canvas.
 
 Key paths:
-- `C:\dev\wiz8-ws\ref\wizardry-8-decomp\CMakeLists.txt`
-- `C:\dev\wiz8-ws\ref\wizardry-8-decomp\tests\runtime\targets.cmake`
-- `C:\dev\wiz8-ws\ref\wizardry-8-decomp\.github\workflows\ci.yml`
-- `C:\dev\wiz8-ws\ref\wizardry-8-decomp\docs\targets\wiz8-executable.md`
-- `C:\dev\wiz8-ws\ref\wizardry-8-decomp\src\wiz8\engine_code\Video2.cpp`
-- `C:\dev\wiz8-ws\ref\wizardry-8-decomp\src\sgp\FileMan.cpp`
-- `C:\dev\wiz8-ws\ref\wizardry-8-decomp\src\sgp\STCI.cpp`
-- `C:\dev\wiz8-ws\src\exe_version.cpp`
-- `C:\dev\wiz8-ws\games\work\3DVideo.CFG`
+- `ref\wizardry-8-decomp\CMakeLists.txt`
+- `ref\wizardry-8-decomp\tests\runtime\targets.cmake`
+- `ref\wizardry-8-decomp\.github\workflows\ci.yml`
+- `ref\wizardry-8-decomp\docs\targets\wiz8-executable.md`
+- `ref\wizardry-8-decomp\src\wiz8\engine_code\Video2.cpp`
+- `ref\wizardry-8-decomp\src\sgp\FileMan.cpp`
+- `ref\wizardry-8-decomp\src\sgp\STCI.cpp`
+- `src\exe_version.cpp`
+- `games\work\3DVideo.CFG`

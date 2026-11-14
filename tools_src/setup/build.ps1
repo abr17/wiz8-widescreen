@@ -41,8 +41,11 @@ END
 $res = Join-Path $out 'setup_res.o'
 & i686-w64-mingw32-windres $rc -O coff -o $res
 if ($LASTEXITCODE) { throw 'windres failed' }
+# setup.cpp and wine_find.cpp (finding the game under Wine) are compiled and linked together;
+# the clipboard (user32) and the registry (advapi32) are in the default libraries
 & i686-w64-mingw32-g++ -std=c++17 -O2 -municode -mwindows -static -s -I $out `
-    (Join-Path $PSScriptRoot 'setup.cpp') $res -o (Join-Path $out 'Wiz8WideSetup.exe') `
+    (Join-Path $PSScriptRoot 'setup.cpp') (Join-Path $PSScriptRoot 'wine_find.cpp') $res `
+    -o (Join-Path $out 'Wiz8WideSetup.exe') `
     -lbcrypt -lcomctl32 -lshell32 -lole32
 if ($LASTEXITCODE) { throw 'compile failed' }
 Get-Item (Join-Path $out 'Wiz8WideSetup.exe')

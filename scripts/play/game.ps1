@@ -1,6 +1,6 @@
 ﻿# Game control for automated tests: launch to the menu, clicks in 640x480 coordinates,
 # loading the first save, quitting.
-#   . C:\dev\wiz8-ws\scripts\play\game.ps1
+#   . .\scripts\play\game.ps1   (from the workspace folder)
 #   Start-Wiz8; Load-FirstSave; Shot 'phase1'; Quit-Wiz8
 # Important: in full-screen mode the game reads the mouse in screen pixels 0..640 x 0..480.
 $script:GameDir = Join-Path $PSScriptRoot '..\..\games\work' | Resolve-Path
@@ -50,7 +50,7 @@ function To-Screen([int]$x, [int]$y) {
     }
 }
 # How many seconds the user has not touched the mouse and keyboard (GetLastInputInfo).
-# An automated test takes over the screen: run it only when the owner is away.
+# An automated test takes over the screen: run it only when the user is away.
 Add-Type -Namespace W8 -Name Idle -MemberDefinition @'
 [StructLayout(LayoutKind.Sequential)] public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }
 [DllImport("user32.dll")] public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);

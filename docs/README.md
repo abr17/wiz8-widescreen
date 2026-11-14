@@ -7,15 +7,17 @@ Start with the repository [README](../README.md). All documents are in English.
 | Document | Read it to |
 |---|---|
 | [building.md](building.md) | set up the toolchain, build every piece, package and release |
-| [testing.md](testing.md) | test the patch in the game, automate play, avoid known pitfalls |
+| [testing.md](testing.md) | run the automated tests, test the patch in the game, automate play, avoid known pitfalls |
 | [decomp-fork.md](decomp-fork.md) | understand the game source in `decomp\`: what is ours, where each screen's code is |
-| [loader.md](loader.md) | know what `version.dll` does besides loading the hybrid: crash and exit diagnostics (`Wiz8Logs\`), game file names on UTF-8 Windows |
+| [loader.md](loader.md) | know what `version.dll` does besides loading the hybrid: crash and exit diagnostics (`Wiz8Logs\`), the report file for bug reports, game file names on UTF-8 Windows, the start under Wine and Proton (Linux) |
 | [experimental.md](experimental.md) | understand, change or remove the experimental features: the Options category "Experimental" and its four switches (Animated Main Menu, Map Mouse Controls, Original Bug Fixes, Alternative Game Tick) |
+| [the render driver's README](../drivers/srdd_d3d11/README.md) | know the render driver `Dll\srDD_D3D11.dll`, a project of its own in the `drivers\srdd_d3d11` submodule: what it does, its settings and its log. Building and testing it: [its testing.md](../drivers/srdd_d3d11/docs/testing.md); what its checks prove: [its verification.md](../drivers/srdd_d3d11/docs/verification.md) |
 
 ## Releases
 
 | Release | Notes |
 |---|---|
+| 1.0.3 (2026-11-14) | [releases/1.0.3.md](releases/1.0.3.md): the patch's own Direct3D 11 render driver instead of dgVoodoo, the start under Wine and Proton, the "Report a problem..." button of the installer |
 | 1.0.2 (2026-10-24) | [releases/1.0.2.md](releases/1.0.2.md): frame rate limit page, experimental switches, memory leak and party death fixes, one installer with a diagnostics checkbox |
 | 1.0.1 (2026-10-18) | [releases/1.0.1.md](releases/1.0.1.md): fixes after 1.0.0, installer updates in place |
 | 1.0.0 (2026-10-17) | [releases/1.0.0.md](releases/1.0.0.md): package contents, hashes, source tags, tests |

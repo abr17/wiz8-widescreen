@@ -1,15 +1,16 @@
 # Builds Wiz8Runtime.exe from the decompilation (decomp) with the MSVC 2022 x86 compiler.
-#   powershell -File C:\dev\wiz8-ws\scripts\build\build-decomp.ps1            # configure + build
-#   powershell -File C:\dev\wiz8-ws\scripts\build\build-decomp.ps1 -Clean     # from scratch
-#   ... -Target wiz8_recovered_objects -KeepGoing                       # debugging errors
-# Log: build\vc2022\build.log. Touches nothing outside C:\dev\wiz8-ws.
+#   powershell -File scripts\build\build-decomp.ps1            # configure + build
+#   powershell -File scripts\build\build-decomp.ps1 -Clean     # from scratch
+#   ... -Target wiz8_recovered_objects -KeepGoing        # debugging errors
+# Log: build\vc2022\build.log. Touches nothing outside the workspace (the folder two levels
+# above this script).
 param(
     [switch]$Clean,
     [switch]$KeepGoing,
     [string]$Target = 'WIZ8_RUNTIME'
 )
 $ErrorActionPreference = 'Stop'
-$Root  = 'C:\dev\wiz8-ws'
+$Root  = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $Src   = "$Root\decomp"
 $Bin   = "$Root\build\vc2022"
 $Zlib  = "$Root\Tools\zlib\zlib-1.0.4"

@@ -9,6 +9,12 @@ import struct
 import sys
 import zlib
 
+# Default place of the .STI header template (a wide frame of the package): the workspace's
+# assets folder, found from this file's own place (scripts\art). The scripts fill in the width
+# with the % operator, so a per-cent sign in the path of the clone itself is doubled here.
+_WORKSPACE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+WIDE_TEMPLATE = os.path.join(_WORKSPACE.replace('%', '%%'), 'assets', 'Data', 'WIDE', 'WIDEFRAME_%d.STI')
+
 
 def read_sti16(path):
     d = open(path, 'rb').read()
@@ -105,7 +111,7 @@ def _q565(v, levels, x, y):
     (original pixels read by read_sti16) is converted back unchanged.
     Others (the painted extension) use 4x4 Bayer ordered dithering, as in the
     game's original images: otherwise a smooth extension next to the "grainy"
-    original shows up as a band (2026-10-12)."""
+    original shows up as a band."""
     lvl = (v * levels + 127) // 255
     if lvl * 255 // levels == v:
         return lvl

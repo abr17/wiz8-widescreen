@@ -5,3 +5,6 @@
 	path = decomp
 	url = https://github.com/abr17/wizardry-8-decomp.git
 	branch = widescreen
+[submodule "drivers/srdd_d3d11"]
+	path = drivers/srdd_d3d11
+	url = https://github.com/abr17/wiz8-d3d11.git

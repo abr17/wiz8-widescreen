@@ -1,5 +1,5 @@
 ﻿# Adds the project's portable tools to the current PowerShell session only.
-# Usage:  . C:\dev\wiz8-ws\Tools\env.ps1
+# Usage:  . .\Tools\env.ps1   (from the workspace folder)
 # The system PATH and registry are not changed.
 $T = $PSScriptRoot
 $env:JAVA_HOME = "$T\jdk21"

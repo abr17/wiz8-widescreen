@@ -1,7 +1,9 @@
 import sys, os, json, glob
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+here = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, here)
 from sti8 import read_sti8
-root = r'C:\dev\wiz8-ws\build\stretch\en'
+stretch = os.path.abspath(os.path.join(here, '..', '..', 'build', 'stretch'))
+root = os.path.join(stretch, 'en')
 def find(n):
     return [p for p in glob.glob(root + r'\**\*.STI', recursive=True) if os.path.basename(p).lower() == n.lower()][0]
 main = [('S087_0_0','main_textbox_back.sti',0,384,152,249), ('S085_0_0','main_roof.sti',0,640,300,340),
@@ -28,7 +30,7 @@ for k, n, i, a, b in sub:
 for c in cfg:
     if c['cut'][1] - c['cut'][0] == 97:
         c['period'] = 97  # the background pattern repeats exactly every 97 px (find_slice.py)
-# 1.0.1: at W = 856 these strips showed visible repeats (owner, 2026-10-17); wider source
+# At W = 856 these strips show visible repeats with the default keys; wider source
 # areas, gradient removal (detrend), spread-out pieces and patch quilting fix them.
 NEW = {
     # save/load rows: whole stone area inside the inner frame (x 92..344 minus a margin),
@@ -55,7 +57,7 @@ NEW = {
 }
 for c in cfg:
     c.update(NEW.get(c['key'], {}))
-json.dump(cfg, open(r'C:\dev\wiz8-ws\build\stretch\config.json', 'w'), indent=1)
+json.dump(cfg, open(os.path.join(stretch, 'config.json'), 'w'), indent=1)
 
 
 

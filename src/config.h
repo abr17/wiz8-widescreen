@@ -12,11 +12,12 @@ struct Config {
     bool fixMouse = true;         // [Input] FixMouse — recompute mouse coordinates
     bool fixAltTab = true;        // [Input] FixAltTab — reset a stuck Alt
     bool dpiAware = true;         // [Display] DpiAware — no blurring at 125%/150% scaling
-    bool logWindowCalls = true;   // [Debug] LogWindowCalls — log window parameters
+    bool logWindowCalls = false;  // [Debug] LogWindowCalls — log window parameters
     bool diffHarness = false;     // [Debug] DiffHarness — comparison harness against the port (w8diff.dll)
     bool diagnostics = false;     // [Debug] Diagnostics — exit/crash trace, Wiz8Logs\ (diagnostics.h)
-    bool hybrid = false;          // [Hybrid] Enabled — port functions from wiz8hy.dll (trial)
+    bool hybrid = true;           // [Hybrid] Enabled — port functions from wiz8hy.dll
     bool utf8FileNames = true;    // [General] Utf8FileNames — game file names on UTF-8 Windows (filenames.h)
+    bool w8x = true;              // [D3D11] Extensions — camera, opaque point, water for srDD_D3D11 (hooks_w8x.cpp)
 };
 
 // Reads the ini. Safe to call even from DllMain (kernel32 only).

@@ -27,6 +27,9 @@ if ($LASTEXITCODE) { throw "build failed" }
 $dll = "$build\version.dll"
 Write-Host "Built: $dll ($((Get-Item $dll).Length) bytes)"
 
+. "$root\scripts\build\forwarders.ps1"
+Assert-BinkForwarders $dll
+
 if ($Install) {
     Copy-Item $dll $work -Force
     if (-not (Test-Path "$work\wiz8ws.ini")) { Copy-Item "$root\dist\wiz8ws.ini" $work }

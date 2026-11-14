@@ -14,7 +14,9 @@ see [building.md](building.md)). The list is `scripts\hybrid\transplant_wide.jso
 
 * `units` and `auto_units` - files from `decomp\src` that are compiled in full;
 * `transplant` - addresses of original functions that are replaced by versions from `decomp`
-  (289 of them in 1.0.2, 287 in 1.0.0-1.0.1);
+  (290 of them in 1.0.3, 289 in 1.0.2, 287 in 1.0.0-1.0.1);
+* `mods_not_transplanted` - functions that carry a "Mod" comment in `decomp` and are deliberately
+  not replaced, each with the reason (`"address": "reason"`); see "How to change a game function";
 * `dll_owned_globals` - original variables that deliberately live in the DLL (the enlarged
   arrays of the wide canvas), each with the reason (`"name": "reason"`); see "Game variables" below;
 * `glue` - glue code.
@@ -36,8 +38,8 @@ Then `scripts\hybrid\build_hybrid.py`:
    copied together**: an old `wiz8hy_hooks.txt` next to a new DLL crashes the game at startup.
 5. Dynamic initialization of globals (`.CRT$XC*`) is stripped out: it would overwrite the
    original's globals. So new hybrid code must not rely on CRT initialization
-   or on UCRT functions that need the locale (`_stricmp`, `strcspn`, `_snwprintf`, `wcsstr`):
-   use our own simple helpers instead.
+   or on UCRT functions that need the locale (`_stricmp`, `_strnicmp`, `strcspn`,
+   `_snwprintf`, `wcsstr`): use our own simple helpers instead.
 6. The DLL, `wiz8hy_hooks.txt` and the map are linked and written into `build\hybrid\staging\`
    (same file names). The binding guard (next section) checks them there; only when every check
    passes are they moved into `build\hybrid\` (map, hooks, DLL last; copies of the old three
@@ -113,8 +115,8 @@ not from undname's text; static members of class templates (`?s@?$Tmpl@H@@2HA`) 
   including the ones that must fail, and the scopes (namespace, in-class declaration, operator
   and template local statics); `python -I scripts\hybrid\build_hybrid.py --selftest` adds the
   guard's own logic (function extents, publishing and `GUARD_FAILED`, the catch-all and the
-  scope checks below, on generated object files and a generated map). The build runs both
-  first.
+  scope checks below, on generated object files and a generated map) and the Mod check's. The
+  build runs both first.
 
 **The guard** (`check_annotations`, `check_object_names`, `check_bindings`,
 `check_owned_users` in `build_hybrid.py`), every build:
@@ -177,8 +179,12 @@ GUIDs are byte-identical, the rest start at zero, and no DLL code uses
 
 1. `version.dll` checks Wiz8.exe (SHA-256 and a code signature). If the exe is unknown,
    nothing is replaced and the game runs as the original.
-2. `wiz8ws.ini`: `[Hybrid] Enabled=1` (the shipped `dist\wiz8ws.ini` has this;
-   `[General] Enabled=0` turns off the whole patch).
+2. The hybrid is on by default: `[Hybrid] Enabled` of `wiz8ws.ini` counts as 1 also without
+   the key or without the file (the shipped `dist\wiz8ws.ini` has `Enabled=1`).
+   `[General] Enabled=0` turns off the whole patch. `[Hybrid] Enabled=0` is not supported: it
+   does not give the original game, it runs the loader's own older hooks on the original code
+   instead (`src\hooks_video.cpp`, `hooks_mouse.cpp`, `hooks_input.cpp`, `hooks_hud.cpp`,
+   `hooks_view3d.cpp`).
 3. In the hook on the original's `WinMain` (0x00401670, `src\hooks_hybrid.cpp`), before video initialization
    and window creation, `version.dll` loads `wiz8hy.dll` and calls `HybridInstall`
    (`src\hybrid\hybrid_main.cpp`, built into `wiz8hy.dll` itself): a `jmp` to the new version is written at the start of each transplanted
@@ -195,7 +201,19 @@ Trial run: `powershell -File scripts\hybrid\try_hybrid.ps1 [-Save "444"] [-Off]`
 
 Step by step (in English) - [building.md](building.md), "Changing game code". The key point: a change to a
 function in `decomp\` gets into `wiz8hy.dll` only if its address is in `transplant` in
-`transplant_wide.json`; otherwise the build succeeds, but the game keeps running the original.
+`transplant_wide.json`; otherwise the game keeps running the original.
+
+**The Mod check** (`check_mod_edits` in `build_hybrid.py`), every build, before compiling. The
+fork marks its changes to the original's functions with a comment that has the word "Mod"
+(`Mod: ...`, `Mod (wide canvas): ...`, `Mod fix (...): ...`; in lower case only as a label:
+`mod: ...`, `mod (...)`, `/* mod */`). A function with a `// FUNCTION: WIZ8 0x<address>`
+annotation that has such a comment, in its body or in the comment lines directly above the
+annotation, and is not in `transplant` fails the build (`build\hybrid\GUARD_FAILED` gets the
+list): the edit would not be in the DLL. Either add the address to `transplant`, or, when the
+edit is meant for the internal port only, to `mods_not_transplanted` with the reason; the build
+prints these entries every time. An entry that is not needed (the function is transplanted now,
+or has no "Mod" comment any more) is an error too. The check sees only marked edits: a change
+without the comment in a function that is not transplanted still builds and is not in the game.
 
 ## History
 

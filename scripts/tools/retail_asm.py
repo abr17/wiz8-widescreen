@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 
-ROOT = r'C:\dev\wiz8-ws'
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 EXE = os.path.join(ROOT, 'ghidra', 'bin', 'Wiz8.exe')
 SRC = os.path.join(ROOT, 'decomp', 'src')
 CACHE = os.path.join(ROOT, 'scripts', '__pycache__', 'func_addrs.txt')

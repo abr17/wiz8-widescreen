@@ -1,5 +1,6 @@
-param([string]$Game, [string]$Ref = 'C:\dev\wiz8-ws\games\reference', [string]$Files, [switch]$Uninstalled)
-# Compares a test game folder with the pristine reference and (when installed) with the package files.
+param([string]$Game, [string]$Ref = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\games\reference')), [string]$Files, [switch]$Uninstalled)
+# Compares a test game folder with the pristine reference (by default games\reference of this
+# repository) and (when installed) with the package files.
 function Hashes($dir) {
     $h = @{}
     foreach ($f in Get-ChildItem -LiteralPath $dir -Recurse -File) {

@@ -8,7 +8,7 @@ Date: 2026-10-11. Everything below was obtained statically (reading PE headers a
 
 | Copy | Path | Wiz8.exe SHA-256 | Size | Build date (PE) | Status |
 |---|---|---|---|---|---|
-| **GOG** (target) | `C:\Program Files (x86)\GOG Galaxy\Games\Wizardry 8` → copied to `C:\dev\wiz8-ws\games\reference` (read-only) and `C:\dev\wiz8-ws\games\work` | `18A74FF61C65B8A2D4CFA11FFCE82AD7FEF022A94EAF0C2F217E479E981420D2` | 3 580 513 | 2001-12-24 | 1.2.4 GOG v1 (GOG registry). Entry point 0x401000 in `.text`; empty SafeDisc sections `stxt774`/`stxt371` remain, but the protection has already been removed — the exe is clean and can be debugged directly. |
+| **GOG** (target) | `C:\Program Files (x86)\GOG Galaxy\Games\Wizardry 8` → copied to `games\reference` (read-only) and `games\work` | `18A74FF61C65B8A2D4CFA11FFCE82AD7FEF022A94EAF0C2F217E479E981420D2` | 3 580 513 | 2001-12-24 | 1.2.4 GOG v1 (GOG registry). Entry point 0x401000 in `.text`; empty SafeDisc sections `stxt774`/`stxt371` remain, but the protection has already been removed — the exe is clean and can be debugged directly. |
 | Steam | `C:\Program Files (x86)\Steam\steamapps\common\Wizardry8` | `D54776C1C286802157F738C1E3D2703498D931B4565E1AB0D55C3366C56E6B9C` | 1 232 896 | 2002-03-15 | **Differs from GOG.** Unnamed sections + `.adata`, exactly one function imported from each DLL: the exe is packed/encrypted by an unknown packer (this is not Steam DRM: there is no `.bind` section). Not debugged; support later only via signatures (if at all). |
 | Buka | — | — | — | — | ISO not found on disk. |
 

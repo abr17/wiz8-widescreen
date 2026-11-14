@@ -7,9 +7,10 @@ The "canvas-scope" step from `docs\history\widescreen-source-research.md`: a 2D 
 **centered** with an offset `ox = (W - 640) / 2`, the side bars are black
 (or show the 3D world, where the game shows it anyway), and the mouse hits the right spot.
 
-- Sources: `C:\dev\wiz8-ws\decomp`, commits `4f3cf25`, `4c2b5e6`, `4181d53`
+- Sources: the author's private copy of `decomp\` ([decomp-fork.md](decomp-fork.md)), commits
+  `4f3cf25`, `4c2b5e6`, `4181d53`
   (on top of `e73bc0b`). Patch: `patches\decomp-msvc2022.patch`.
-- Build: `pwsh -NoProfile -File C:\dev\wiz8-ws\scripts\build\build-decomp.ps1` ->
+- Build: `pwsh -NoProfile -File scripts\build\build-decomp.ps1` ->
   `build\vc2022\Wiz8Runtime.exe` (built, links, only the old warnings).
 - The game was **not run** (as per the task). Everything below about in-game behavior is expected
   behavior, to be checked against the checklist at the end.
@@ -144,12 +145,14 @@ Previously (and in the original) one screen pixel = one game unit, so at
 
 1. screen -> canvas: `canvas_x = (screen_x - pic_x) * W / pic_width`, `canvas_y =
    (screen_y - pic_y) * 480 / pic_height` (rounded down; picture = client area of the game
-   window, in borderless mode the whole screen; in fullscreen mode dgVoodoo
-   (`ScalingMode = stretched_ar`) keeps the monitor's mode and fits the chosen resolution
-   into it with black bars, so the picture is the centered rectangle of that resolution's
-   aspect ratio, `OutputRect` in Canvas.cpp). dgVoodoo's `CaptureMouse` is off: with it on,
-   dgVoodoo confines the cursor to the chosen resolution's size from the top-left corner
-   (1920x1080 of a 2560x1600 screen), so the right and bottom of the picture were unreachable;
+   window, in borderless mode the whole screen; in fullscreen mode the render driver
+   (`Dll\srDD_D3D11.dll`, since 1.0.3; `FullscreenPresent=borderless`, its default) keeps the
+   monitor's mode and fits the chosen resolution into it with black bars, so the picture is
+   the centered rectangle of that resolution's aspect ratio, `OutputRect` in Canvas.cpp, used
+   while the output is open in a display mode). Up to 1.0.2 dgVoodoo did the same
+   (`ScalingMode = stretched_ar`, with its `CaptureMouse` off: on, it confined the cursor to
+   the chosen resolution's size from the top-left corner, 1920x1080 of a 2560x1600 screen, so
+   the right and bottom of the picture were unreachable);
 2. canvas -> game: `game_x = canvas_x - ox`, clamp to 0..639 / 0..479 - the same
    in polling (`PositionMouseCursor` -> `SGPMouseGetPos`), in events
    (`MouseHandler`) and for the wheel, so that hover and click always see the same point.
@@ -211,9 +214,10 @@ Previously (and in the original) one screen pixel = one game unit, so at
 - Bink: the 640x480 frame is centered thanks to the shifted pointer.
 - `BeginVideoPresentation` (`SetDisplayMode(640,480)`, the old fullscreen path for
   movies) and `GetCurrentVideoSettings` (640x480 for SGP).
-- Full-screen fades (`CreateColoredPolygonSprite(640,480)` for the
-  "surprise attack" flash and the camp screen): they cover the 640x480 window, the bars are not
-  darkened (same as in the DLL).
+- Full-screen fades (`CreateColoredPolygonSprite` for the screen fades and the "surprise
+  attack" flash): 640x480 at the window while the canvas has no side bars; with side bars the
+  quad is as wide as the canvas (`FullscreenQuadWidth`), so the HUD at the canvas edges is
+  covered too.
 
 ## List of changed functions (decomp, after the review-fixes commit)
 
@@ -335,7 +339,11 @@ Outside `decomp`: `dist\wiz8wide.ini` (sample), `scripts\play\game.ps1` (the
 8. `SetWorldScaledViewport` (region link builder in `Octree.cpp`, an editor
    path) now draws a quarter of the window rather than a quarter of the screen; this affects the pixel
    count proportionally.
-9. Full-screen fades and flashes do not cover the bars.
+9. Spell flashes that the game ties to the camera (the FLASH spell visuals,
+   `W8SpellVisual::UpdateRepresentation` 0x004abe00) are 3D animations from the game's data,
+   made for the 4:3 view. With Hor+ the view is wider and such an animation fills its middle
+   only. They are left as they are on purpose: the patch stretches nothing. (Screen fades and
+   the "surprise attack" flash do cover the whole canvas, see `FullscreenQuadWidth`.)
 
 ## LIVE TEST CHECKLIST
 
@@ -376,7 +384,7 @@ What to look at (W = 768 unless stated otherwise):
 | 18 | Automap | map centered, party marker and item markers in the right places and the right size; scrolling/zooming the map with the mouse |
 | 19 | Options, saving the game | centered; the new save thumbnail is normal (not squashed, no HUD and bars) |
 | 20 | Save, load this save and an old save (made by the original) | they load, thumbnails look the same |
-| 21 | Combat: "surprise attack" flash, dimming | the 640x480 window is dimmed (the bars are not dimmed - known limitation) |
+| 21 | Combat: "surprise attack" flash, dimming | the whole canvas is dimmed, the HUD at its edges included |
 | 22 | Alt+Tab and back | picture intact, black bars, mouse hits |
 | 23 | `Width=640` (without `MouseScale`) | behaves like the build before the change (on 2560x1600 the cursor moves 1:1, as before); log shows `MouseScale=0` |
 | 24 | `Width=640`, `MouseScale=1` | UI stretched to the whole screen as before, but the mouse works across the whole screen |
@@ -501,7 +509,7 @@ we did **not touch** - the element only got an "anchor":
 - Modal dialogs and message boxes, tooltips (but the region tooltip
   can now sit at the edge of the canvas), monster list in combat, party movement
   panel, formation window (button on the formation board), debug labels.
-- Full-screen dimming (surprise attack flash) - 640x480 centered.
+- Full-screen dimming (screen fades, surprise attack flash) - the whole canvas.
 - All other screens (menu, camp, automap, options, loading) - as before.
 
 ### Risks to check in-game
@@ -1006,7 +1014,7 @@ a kink at the joint. In the original with 640x480 output at 1:1 this is not visi
 **Fix.** `[Display] SingleTexture2D=1` (default): the tile side
 `SurfaceTileExtent` (`Video2.cpp`) is the nearest power of two covering
 the whole layer (1024 for 768/856 x 480), if the renderer supports it
-(`srGERD::getMaxTextureWidth/Height`, 2048 under dgVoodoo). Otherwise 128, as
+(`srGERD::getMaxTextureWidth/Height`: 2048 with the patch's render driver, as under dgVoodoo before). Otherwise 128, as
 before. The same for the camp picture layer (`MainGameScreen.cpp`). Texture texels
 beyond the picture edge (x >= W, y >= 480) are filled by extending
 the edge column/row (`ExtendTileEdges` in `surface2d.cpp`, two texels;
@@ -1048,9 +1056,24 @@ clears the surface or the bars (`ClearPrimarySurface`, `ResetVideoFrameState`,
 `CanvasClearSideBars`, surface creation, `DrawWideFullscreenArt`).
 `ReleaseWideFullscreenArt` on a screen change also removes the wings.
 
+**Darkening with the window.** One place darkens the whole 640x480 window: in character
+creation, on the page with the name, portrait, personality and voice, a click on the voice
+sample control (`W8CharacterPersonalityPage::OnPrimary`, `0x005c7220`) looks every pixel of
+the window up in the game's shade table (`ShadowVideoSurfaceRect`; `InitializeGame` sets the
+table to 0.66 of each colour) and opens the sample's box, the character screen's only dialog
+with `m_dialog_response == 1`. The window becomes bright again when `UpdateDialog`
+(`0x005b04b0`) has closed the box (a click, Enter, Esc, Space, Backspace, or the end of the
+sample) and the screen repaints its page in the same frame. `UpdateWideSideWingsShade`
+(`WideArt.cpp`) does the same to the wings: called from `RenderFrame` right before
+`FlushDirtyTiles`, it looks the pixels of both bars up in the same table when the character
+screen has that box, and copies the wings from the picture again when the screen has no
+dialog any more. Both original functions stay the original's; the patch only reads the
+screen's state. Without wings in the bars and on every other screen it returns at once.
+
 **Check in-game:** inventory from the game and during rest (whether the
 camp picture covered anything needed), options from the menu and from the game, journal, character
-creation; going back into the game with no marble leftovers in the HUD.
+creation; going back into the game with no marble leftovers in the HUD; a voice sample in
+character creation (the stone dark with the window, and bright again with it).
 
 ## Wide map (2026-10-12, commit `0c40537`)
 

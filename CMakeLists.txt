@@ -20,7 +20,8 @@ add_library(minhook STATIC
 )
 target_include_directories(minhook PUBLIC third_party/minhook/include)
 
-# Our DLL. The file name is version.dll: the game's sr.dll loads it under that name.
+# Our DLL. The file name is version.dll: the game's sr.dll loads it under that name. Under Wine
+# the installer also puts a copy of it in place of binkw32.dll (src/loader_route.h).
 add_library(wiz8ws SHARED
     src/dllmain.cpp
     src/proxy_version.cpp
@@ -35,19 +36,24 @@ add_library(wiz8ws SHARED
     src/hooks_mouse.cpp
     src/hooks_input.cpp
     src/sr_api.cpp
+    src/hooks_w8x.cpp
     src/hooks_hud.cpp
     src/hooks_view3d.cpp
     src/hooks_diff.cpp
     src/hooks_hybrid.cpp
     src/diagnostics.cpp
     src/filenames.cpp
+    src/loader_route.cpp
+    src/wine_settings.cpp
     src/version.def
 )
 set_target_properties(wiz8ws PROPERTIES OUTPUT_NAME "version" PREFIX "")
 target_compile_features(wiz8ws PRIVATE cxx_std_17)
 target_compile_definitions(wiz8ws PRIVATE WIZ8WS_VERSION="${WIZ8WS_VERSION}" WIN32_LEAN_AND_MEAN NOMINMAX)
 target_compile_options(wiz8ws PRIVATE -Wall -Wextra -Wno-unused-parameter)
-target_link_libraries(wiz8ws PRIVATE minhook bcrypt)
+# advapi32: the registry, for the Wine setting (src/wine_settings.cpp); sr.dll imports it too,
+# so it adds no new DLL to the game's process.
+target_link_libraries(wiz8ws PRIVATE minhook bcrypt advapi32)
 # Static linking of the C++ runtime: the DLL does not drag in libc++.dll etc.
 target_link_options(wiz8ws PRIVATE -static -static-libgcc -s)
 

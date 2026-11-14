@@ -1,5 +1,5 @@
-"""Lockpick panel gaps "quilted" from pixels of the original niche itself (2026-10-16).
-The owner rejected all Astra textures (different pattern and tint), so here there
+"""Lockpick panel gaps "quilted" from pixels of the original niche itself.
+Generated textures differ from the niche in pattern and tint, so here there
 is not a single foreign pixel: gap = the whole original niche (shadow + stone), then
 image quilting (Efros-Freeman) with 8x8 patches from the niche's flat part
 (x 13..28) - with a 3-pixel overlap and a minimum-error boundary cut, so there are
@@ -119,14 +119,14 @@ def main():
     ap.add_argument('out_dir')
     ap.add_argument('--seed', type=int, default=1)
     ap.add_argument('--marble', action='store_true', help='quilt from the panel marble instead of the niche')
-    ap.add_argument('--template', default=r'C:\dev\wiz8-ws\assets\Data\WIDE\WIDEFRAME_%d.STI')
+    ap.add_argument('--template', default=artkit.WIDE_TEMPLATE)
     a = ap.parse_args()
     _, h0, rows = artkit.read_png(a.panel0)
     assert h0 == HEIGHT
     niche = [row[:NICHE_W] for row in rows]
     os.makedirs(a.out_dir, exist_ok=True)
     # 16:9 (W = 856, gaps 108 wide) is quilted; 16:10 (gaps 64 wide) is cut out of it
-    # (2026-10-17, owner: one drawing for both widths). Each gap = the niche + its quilted
+    # (one drawing for both widths). Each gap = the niche + its quilted
     # continuation, so the narrower gap is the first 64 columns of the wider one.
     rng = random.Random(a.seed)
     wide_left = quilt(niche, 108, rng, rows if a.marble else None)

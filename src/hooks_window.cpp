@@ -1,5 +1,7 @@
-// Hooks on window functions. In Phase 1 — observation only: we log the parameters
-// the game (and the sr.dll engine) create windows with, and change nothing.
+// Hook on CreateWindowExA. It changes nothing in the call. The first call starts the deferred
+// initialization (EnsureRuntime: the log, the exe hash, diagnostics), which must not run inside
+// DllMain; with [Debug] LogWindowCalls=1 we also log the parameters the game (and the sr.dll
+// engine) create windows with.
 //
 // How a MinHook hook works (like monkey-patching in JS):
 //   const orig = user32.CreateWindowExA;

@@ -1,5 +1,5 @@
-"""Seamless pre-made stretched UI images (2026-10-16).
-With brightness turned up, the owner saw seams where the UI is stretched by repeating
+"""Seamless pre-made stretched UI images.
+With brightness turned up, seams show where the UI is stretched by repeating
 an image slice (DrawCatalogImageWide): the pattern breaks off at the joints.
 Here the middle of width 2*ox is quilted from vertical strips of the image itself
 (from the same slice [cut_left, cut_right)), each strip full height - rows are not
@@ -15,13 +15,14 @@ config.json: [{"key": "S087_0_0", "sti": "path to the extracted STI", "image": 0
   the image offset within the frame). Writes <out_dir>/<key>_768.sti and _856.sti
   (16-bit W x 480, strip at x [0, width + 2*ox), y from 0; 0 = transparent).
   Optional keys: "src": [lo, hi) - columns the pieces are taken from (default: grown from the
-  slice by source_band); "period": 97 - keep the background tile phase; and (2026-10-17, against
+  slice by source_band); "period": 97 - keep the background tile phase; and (against
   one feature repeating side by side) "spread": true - pick pieces whose columns are shown as far
   away as possible; "detrend": true - remove the per-row horizontal light gradient (bevels) from
   moved pieces; "patch": [P, OV]; "avoid": [[lo, hi), ...] - source columns never used (a
   distinctive crack/blob); "guide": [images], "guide_part": i - quilt several images of the STI
   stacked so that their variants (normal/selected rows) get one and the same layout.
-  Without the new keys the output is byte-identical to the 2026-10-16 version."""
+  An item without "spread", "detrend", "patch", "avoid" and "guide" is quilted by the plain
+  strip method described above."""
 import argparse
 import json
 import os
@@ -33,7 +34,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import artkit  # noqa: E402
 from sti8 import read_sti8  # noqa: E402
 
-TEMPLATE = r'C:\dev\wiz8-ws\assets\Data\WIDE\WIDEFRAME_%d.STI'
+TEMPLATE = artkit.WIDE_TEMPLATE
 NONE = (-60, -60, -60)  # transparent pixel in comparisons
 
 
@@ -255,7 +256,7 @@ def narrower_map(strip, remove, lo, hi, OV=12):
     # Removing columns also brings things closer together: two near-identical columns that
     # stood remove + d apart in the wide strip end up only d apart. With a pattern that
     # repeats every 97 px (log, options, saves) a careless cut leaves a 9-px "stutter" -
-    # a crack or blot shown twice side by side (skeptic review, 2026-10-17). So every cut
+    # a crack or blot shown twice side by side. So every cut
     # position is first scored by the near-duplicate column pairs it creates (closer = worse),
     # and only among the least-repeating positions the best-fitting seam is chosen.
     D = 150
@@ -302,7 +303,7 @@ def narrower_map(strip, remove, lo, hi, OV=12):
             i = path[y]
             cost += errs[min(i, OV - 1)][y] + (errs[i - 1][y] if i > 0 else 0)
         cands.append((pen, cost, a, path))
-    # Local check on the composed result (round 2 of the review): a duplicate only 10-15 rows
+    # Local check on the composed result: a duplicate only 10-15 rows
     # tall (a blot's lower lobe shown twice, 9 px apart) is diluted in whole-column scores.
     # For the most promising cuts, compare every column pair across the join (distance
     # 2..24) row by row, count only pixels with detail, and take the worst 10-row window.
@@ -417,7 +418,7 @@ def main():
                 v = px[iy][ix]
                 if v is not None and 0 <= sx + ix < width:
                     cols[sx + ix][sy + iy] = pal[v]
-        # optional (2026-10-17): "guide" - images of the same STI quilted together (stacked
+        # optional: "guide" - images of the same STI quilted together (stacked
         # vertically) so that variants of one panel (save row normal/selected, with/without
         # comment) get the same layout; "detrend" - remove the per-row horizontal light
         # gradient from the moved pieces; "spread" - keep repeated source columns far apart;
@@ -437,8 +438,8 @@ def main():
         detrend = it.get('detrend', False)
         qg = detrended(gcols, row_slopes(gcols, *src), cut_right) if detrend else None
         qown = detrended(cols, row_slopes(cols, *src), cut_right) if detrend else cols
-        # 16:9 (W = 856) is quilted; 16:10 (W = 768) is cut out of it (2026-10-17, owner: one
-        # drawing for both, as with the backgrounds) - 88 columns removed from the quilted middle.
+        # 16:9 (W = 856) is quilted; 16:10 (W = 768) is cut out of it (one drawing for
+        # both, as with the backgrounds) - 88 columns removed from the quilted middle.
         W = 856
         ox2 = W - 640
         rng = random.Random(a.seed * 1000 + W)
@@ -454,15 +455,15 @@ def main():
         # right side can start phase-aligned with the original right part (one jump, as before)
         cut_hi = cut_right + ox2 + 12 - OV
         # strips whose middle repeats every `period` px: any cut inside the middle shifts the
-        # pattern by period - remove (9 px) and shows a blot or hook twice side by side (review
-        # rounds 1-3, 2026-10-17), so the right side must start exactly at the original right
-        # part's native continuation - one phase jump next to the right part, as before
+        # pattern by period - remove (9 px) and shows a blot or hook twice side by side,
+        # so the right side must start exactly at the original right
+        # part's native continuation - one phase jump next to the right part
         cut_lo = cut_hi - 12 - remove if it.get('period', 0) else cut_right
         g_src, w_src = gstrip, wide
         if it.get('period', 0):
             # ...and from the original's own columns: in the 856 the OV columns before the right
             # part hold its last quilted piece blended in (that piece follows the 856's pattern
-            # phase, 9 px off in the 768 - review round 4), so the 768 takes them unblended
+            # phase, 9 px off in the 768), so the 768 takes them unblended
             rf = cut_right + ox2
             g_src, w_src = list(gstrip), list(wide)
             for w in range(rf - OV, rf):

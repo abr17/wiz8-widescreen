@@ -35,7 +35,7 @@ constexpr uint32_t MouseHandler = 0x00401C70;              // stdcall LRESULT(in
 constexpr uint32_t Iat_GetCursorPos = 0x005EB250;          // import table slot USER32!GetCursorPos
 constexpr uint32_t Iat_SetCursorPos = 0x005EB254;          // import table slot USER32!SetCursorPos
 
-// --- frame drawing (Phase 4) ---
+// --- frame drawing (centered 4:3 interface and Hor+) ---
 constexpr uint32_t RenderScene = 0x00427850;               // cdecl void(srScene*, srCamera*, const int* vp640, bool fog)
 constexpr uint32_t RenderWorldToSurface = 0x00426F80;      // cdecl uint8(srColorSurface*, const int* rect, bool sky) — save thumbnails, automap
 // Return addresses (where a call returns to) — they tell us WHO called the function.

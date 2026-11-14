@@ -3,7 +3,7 @@
 #   powershell -File scripts\w8diff\run.ps1 -Specs smoke [-Save "Before Bayjin"] [-Scale 1] [-Only retail|port]
 #   -NoGen   do not regenerate plans (use the existing ones in games\work)
 #   -Corpus  dump the save's characters into build\w8diff\corpus (retail only)
-# Touches nothing outside C:\dev\wiz8-ws. On the first run Quick 1.SAV in games\work
+# Touches nothing outside the workspace. On the first run Quick 1.SAV in games\work
 # is copied to build\w8diff\saves_backup.
 param(
     [string]$Specs = '',

@@ -1,4 +1,5 @@
-// Comparison harness against the port ([Debug] DiffHarness=1, off by default).
+// Comparison harness against the port ([Debug] DiffHarness=1, off by default). Installed only
+// with [Hybrid] Enabled=0: the port is compared with the original's own functions.
 //
 // Hook on RenderFrame (once per frame, game thread): on the first frame we load
 // w8diff.dll (built by scripts\w8diff\build_dll.ps1 with the same MSVC as the

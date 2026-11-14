@@ -49,6 +49,7 @@
   "0x00421f70": "LockPrimarySurface: widescreen_ui",
   "0x00421ff0": "ClearPrimarySurface: widescreen_ui",
   "0x004220b0": "dependency of InitializeRendererSceneObjects",
+  "0x00422240": "InitializeVideoDevice: the message when the render driver does not start",
   "0x00422550": "dependency of InitializeRendererSceneObjects",
   "0x00422800": "dependency of CreateWizardryWindow",
   "0x00422b10": "ResetVideoFrameState: widescreen_ui",
@@ -298,6 +299,12 @@
   "0x005d7310": "W8AssayDialog::PopulateText: russian",
   "0x005da8b0": "W8NpcDialog::CreateControls: russian",
   "0x005db4e0": "W8DialogButton::Draw: widescreen_ui"
+ },
+ "mods_not_transplanted": {
+  "0x00428ab0": "AssertFailureHandler: the stack dump to Wiz8Runtime.assert.txt is made by the internal port's crash report (tests/runtime/wiz8_crash_report.cpp), which wiz8hy.dll does not contain.",
+  "0x004553a0": "W8Navigator::UpdateNavigation: guard of the internal port against an infinite movement speed in a frame without game time (docs/wide-canvas.md, \"Hang during rest\"); by its comment the original can hang there too. The hybrid runs the original function, so the guard is in the internal port only.",
+  "0x004a6e20": "W8GrCycle::TickAnimation: guard of the internal port against a non-numeric or huge animation speed from the navigator (see 0x004553a0). The hybrid runs the original function, so the guard is in the internal port only.",
+  "0x005cf6c0": "LayoutPortraitQuoteBubble: the text colour and shadow, which the original reads without setting them, get fixed values in the internal port (built with MSVC 2022 it drew a dark green outline around every letter). The hybrid runs the original function, so the fix is in the internal port only."
  },
  "glue": [
   "src/hybrid/hybrid_main.cpp"

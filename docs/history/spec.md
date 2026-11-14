@@ -1,11 +1,11 @@
 # Wizardry 8: native widescreen + undistorted HUD + borderless
 
-> **History.** This document describes an early stage of the project and may differ from the released patch 1.0.0 (the hybrid, see [docs/hybrid.md](../hybrid.md) and [README](../../README.md)). It is kept to show how we arrived at the current solution. Paths like `C:\Games`, `C:\Tools`, Visual Studio and the dinput8/ddraw architecture were not used: everything lives inside `C:\dev\wiz8-ws`, and the tools are portable.
+> **History.** This document describes an early stage of the project and may differ from the released patch 1.0.0 (the hybrid, see [docs/hybrid.md](../hybrid.md) and [README](../../README.md)). It is kept to show how we arrived at the current solution. Paths like `C:\Games`, `C:\Tools`, Visual Studio and the dinput8/ddraw architecture were not used: everything lives inside the workspace (the folder of the clone, written `<workspace>` below), and the tools are portable.
 
 Work spec for Claude Code on a local machine (Windows).
 Goal: play Wizardry 8 at 16:9 / 16:10 / 21:9 so that the 3D is Hor+, the interface is not stretched, and the game runs reliably in borderless windowed mode on Windows 10/11.
 
-> **How to use this file.** First set up the environment per section 9. Then put this file in the project working folder (for example `C:\dev\wiz8-ws\SPEC.md`) and tell the local Claude: "We work from SPEC.md, starting with Phase 0. After each phase, stop and show me the verification result". Phases go strictly in order; each one ends with a verifiable result.
+> **How to use this file.** First set up the environment per section 9. Then put this file in the project working folder (for example `<workspace>\SPEC.md`) and tell the local Claude: "We work from SPEC.md, starting with Phase 0. After each phase, stop and show me the verification result". Phases go strictly in order; each one ends with a verifiable result.
 
 ---
 
@@ -178,7 +178,7 @@ Every time: screenshots in `docs/screens/<milestone>/`, a log without errors, th
 - Record every function address in `docs/functions.md` together with its byte signature and how it was verified.
 - Mark assumptions about a function's meaning as a hypothesis until confirmed in the debugger.
 - Check the exe hash before every hook; on an unknown version, patch nothing.
-- Comment C++ code more than usual: the project owner writes PHP/JS.
+- Comment C++ code more than usual, in plain words.
 - After each phase, stop and show the result and screenshots.
 
 ---
@@ -213,7 +213,7 @@ Instead of a sandbox, isolation is provided like this: a separate project folder
 ### Step 1. Folder structure
 Do not work in `C:\Program Files (x86)\...`: there Windows redirects the game's writes to VirtualStore and requires admin rights, which confuses both debugging and Claude.
 ```
-C:\dev\wiz8-ws\            ← project repository (git), we run claude here
+<workspace>\               ← project repository (git), we run claude here
   SPEC.md                  ← this file
   CLAUDE.md                ← rules for Claude (step 7)
   src\  docs\  third_party\
@@ -245,7 +245,7 @@ Restart the terminal and check: `git --version`, `node -v`, `java -version`, `cm
 - Check: `cl` prints a version with `for x86`. This matters: the DLL must be 32-bit.
 
 ### Step 4. Reverse-engineering tools
-- **Ghidra:** download the zip from github.com/NationalSecurityAgency/ghidra/releases, unpack it to `C:\Tools\ghidra`. Launch with `ghidraRun.bat`. Create a project `C:\dev\wiz8-ws\ghidra\`, import `Wiz8.exe` and the DLLs from `Dll\` **from the working copy**, run Auto Analysis.
+- **Ghidra:** download the zip from github.com/NationalSecurityAgency/ghidra/releases, unpack it to `C:\Tools\ghidra`. Launch with `ghidraRun.bat`. Create a project `<workspace>\ghidra\`, import `Wiz8.exe` and the DLLs from `Dll\` **from the working copy**, run Auto Analysis.
 - **x64dbg:** snapshot zip from x64dbg.com, unpack it to `C:\Tools\x64dbg`. For the game we use `release\x32\x32dbg.exe`.
 - **Process Monitor:** `winget install --id Microsoft.Sysinternals.ProcessMonitor -e`.
 - **API Monitor** (rohitab.com) and **dgVoodoo2** (dege.freeweb.hu): unpack to `C:\Tools\`.
@@ -254,11 +254,11 @@ Restart the terminal and check: `git --version`, `node -v`, `java -version`, `cm
 ```powershell
 irm https://claude.ai/install.ps1 | iex
 ```
-Then run `claude` in `C:\dev\wiz8-ws` and log in. Check: `claude doctor`.
+Then run `claude` in `<workspace>` and log in. Check: `claude doctor`.
 
 ### Step 6. rea MCP
 ```powershell
-cd C:\dev\wiz8-ws
+cd <workspace>
 npx rea-agents setup
 ```
 The wizard will register the MCP server in Claude Code. When it asks about the engine for native binaries, choose **Ghidra** and point it to `C:\Tools\ghidra`. If a Ghidra startup timeout appears, set the variable:
@@ -272,7 +272,7 @@ Check: in `claude` run `/mcp` (the rea server is in the connected state), then a
 2. Or the fallback via WSL2: in Ubuntu install Node 22+, JDK 21, Ghidra for Linux, copy `Wiz8.exe` and the DLLs to `~/wiz8-bin/` and run `npx rea-agents setup` there. Analysis in WSL, while building and debugging still happen in Windows. Claude transfers the analysis results (addresses, names) to `docs/functions.md`.
 
 ### Step 7. Project settings for Claude
-`C:\dev\wiz8-ws\.claude\settings.json`:
+`<workspace>\.claude\settings.json`:
 ```json
 {
   "permissions": {
@@ -283,21 +283,21 @@ Check: in `claude` run `/mcp` (the rea server is in the connected state), then a
   }
 }
 ```
-`C:\dev\wiz8-ws\CLAUDE.md` (short):
+`<workspace>\CLAUDE.md` (short):
 ```markdown
 # Wiz8 widescreen patch
 - We work from SPEC.md, phase by phase; after each phase, stop and report.
 - Build only Win32 (x86), from VS Dev Shell -Arch x86.
 - Game reference copy C:\Games\Wiz8-reference: never modify.
 - Test copy C:\Games\Wiz8-work: copy built DLLs here.
-- Ghidra project: C:\dev\wiz8-ws\ghidra. Debugger: C:\Tools\x64dbg\release\x32\x32dbg.exe.
+- Ghidra project: <workspace>\ghidra. Debugger: C:\Tools\x64dbg\release\x32\x32dbg.exe.
 - Found addresses: docs/functions.md (address, byte signature, how verified).
-- The owner writes PHP/JS: explain C++ and assembly in simple words.
+- Explain C++ and assembly in simple words.
 ```
 
 ### Step 8. Git
 ```powershell
-cd C:\dev\wiz8-ws
+cd <workspace>
 git init
 git submodule add https://github.com/TsudaKageyu/minhook third_party/minhook
 ```
@@ -311,6 +311,6 @@ In `.gitignore`: `build/`, `ghidra/`, `*.exe`, `*.dll` in the root, game files. 
 - [ ] `cl` from VS Dev Shell x86 works
 - [ ] Ghidra opens and analyzes `Wiz8.exe`
 - [ ] `x32dbg` starts the game from `C:\Games\Wiz8-work` and stops at the entry point
-- [ ] `claude` in `C:\dev\wiz8-ws`, `/mcp` shows rea (or an alternative) connected
+- [ ] `claude` in `<workspace>`, `/mcp` shows rea (or an alternative) connected
 - [ ] Claude produces an overview of `Wiz8.exe` via MCP on request
 - [ ] The game from `Wiz8-work` starts in DirectX7 32-bit with the Extender

@@ -1,8 +1,9 @@
 # Fills assets\ from a released Wizardry 8 Widescreen zip, so the repository can be built
 # without any game-derived file in git.
 #   pwsh -File scripts\build\import-release.ps1 -Zip <Wiz8Widescreen-x.y.z.zip> [-Force] [-Binaries]
-# assets\ gets the release's files\Data\ (wide .STI art, FALCON.STI) and the dgVoodoo files
-# (DDraw.dll, D3DImm.dll, dgVoodoo.conf), laid out like the game folder.
+# assets\ gets the release's files\Data\ (wide .STI art, FALCON.STI), laid out like the game
+# folder. Nothing else is taken: the render driver (Dll\srDD_D3D11.dll) is built from
+# drivers\srdd_d3d11, and the dgVoodoo files of the releases before 1.0.3 are not used any more.
 #   -Force     overwrite files already in assets\ (default: keep them and report differences)
 #   -Binaries  also copy the prebuilt version.dll to build\ and wiz8hy.dll + wiz8hy_hooks.txt
 #              to build\hybrid\, for working on the installer, the art or the package without
@@ -36,9 +37,6 @@ function Import([string]$src, [string]$rel) {
 }
 foreach ($f in Get-ChildItem -LiteralPath (Join-Path $files 'Data') -Recurse -File) {
     Import $f.FullName $f.FullName.Substring($files.Length + 1)
-}
-foreach ($name in 'DDraw.dll', 'D3DImm.dll', 'dgVoodoo.conf') {
-    Import (Join-Path $files $name) $name
 }
 "assets: $copied copied, $same already identical, $($kept.Count) different and kept (use -Force to overwrite)"
 foreach ($k in $kept) { "  kept: $k" }

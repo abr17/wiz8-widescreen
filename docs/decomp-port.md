@@ -5,17 +5,17 @@
 Result: `Wiz8Runtime.exe` compiles and links with MSVC 2022 (v14.44, x86) with no
 unresolved symbols. The game has not been run yet: that is the next step.
 
-- Sources (working copy, git): `C:\dev\wiz8-ws\decomp`, base: commit
-  `720e1d8 upstream decomp 075cbd0`.
-- Build output: `C:\dev\wiz8-ws\build\vc2022\Wiz8Runtime.exe` (2 308 096 bytes), with
+- Sources (git): the author's private copy of `decomp\` ([decomp-fork.md](decomp-fork.md)),
+  base: commit `720e1d8 upstream decomp 075cbd0`.
+- Build output: `build\vc2022\Wiz8Runtime.exe` (2 308 096 bytes), with
   `.map` and `.pdb` next to it.
-- Patch against the base: `C:\dev\wiz8-ws\patches\decomp-msvc2022.patch`.
+- Patch against the base: `patches\decomp-msvc2022.patch`.
 
 ## How to rebuild
 
 ```powershell
-powershell -File C:\dev\wiz8-ws\scripts\build\build-decomp.ps1          # configure + build
-powershell -File C:\dev\wiz8-ws\scripts\build\build-decomp.ps1 -Clean   # from scratch (~2 min)
+powershell -File scripts\build\build-decomp.ps1          # configure + build
+powershell -File scripts\build\build-decomp.ps1 -Clean   # from scratch (~2 min)
 ```
 
 The script sets up the portable MSVC itself (`Tools\msvcenv.ps1`), runs CMake
@@ -557,9 +557,10 @@ zeroing `m_target` in the player constructor, see below).
 | `VideoFullScreen` | `Video2.cpp` | changes `g_fullscreen` and recreates the output | only `g_fullscreen = 1`: `/WINDOW`, the in-game toggle and "maximize" (WM_SIZE) do not break the window; the mouse works in screen coordinates (the window starts at 0,0 of the monitor) |
 | `InitializeVideoManager` | `Video2.cpp` | — | `g_fullscreen = 1` before the window is created |
 | `BeginVideoPresentation` | `Video2.cpp` | closes the renderer, exclusive mode, monitor at 640x480, gives the player the screen surface | returns 0 immediately: the renderer is not touched |
-| `FinishVideoPresentation` | `Video2.cpp` | restores the normal mode and reopens the renderer | only `InvalidateCanvas(0)` - the next screen redraws over the last frame |
+| `FinishVideoPresentation` | `Video2.cpp` | restores the normal mode and reopens the renderer | only `InvalidateCanvas(0)` - the next screen redraws over the last frame; since 1.0.3, in every display mode (the videos go through the canvas in all of them, `DisplayVideosOnCanvas`), also asks for one whole clear of the back buffer at the start of the next frame (`s_clear_back_buffer_once`, done in `ClearCanvasSideBars`), so that nothing of the last video frame shows where that frame draws nothing |
 | `W8BinkVideo::W8BinkVideo` | `Bink.cpp` | `m_target` (+8) not initialized | `m_target(0)`; without a "screen" the player writes the frame into the 2D canvas (`LockPrimarySurface` - the central 640x480 window) and marks the changed rectangles |
 | `IntroScreenFrame` | `IntroScreen.cpp` | the movie screen does not draw the frame (frames went straight to video memory) | while `gpVideo` is alive - `RenderFrame()`, the frame is shown through the 2D canvas centered, like any screen |
+| `IntroScreenEnter` | `IntroScreen.cpp` | — | since 1.0.3, in every display mode: turns the 2D layer's alpha test off (`SetPrimarySurfaceTextureHint2Enabled(false)`) and marks the whole canvas for upload. The player writes 5:5:5 pixels with bit 15 clear; entered straight from the main game (the video of the Dark Savant ending, `darkend.bik`) the layer was still in the game's 1-bit-alpha mode, where such pixels are holes, and the video played without a picture (1.0.2 has the fault). `MainGameScreenEnter` turns the test on again |
 | `WindowProcedure` | `sgp\sgp.cpp` | — | on `WM_ACTIVATEAPP(TRUE)` and `WM_SETFOCUS` reset `gfShiftState/gfCtrlState/gfAltState` and `gfKeyState[VK_SHIFT/VK_CONTROL/VK_MENU]` (in the GOG exe 0x6F04EA, 0x6F0508, 0x6F051C, 0x6F0530..32) - Alt does not "stick" after Alt+Tab |
 
 ### The Russian translation's intro movies (`Data\Flics\Intro`)

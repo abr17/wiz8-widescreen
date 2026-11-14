@@ -23,7 +23,7 @@ Most scripts print usage in their header comment.
 |---|---|
 | `build_hybrid.ps1 [-Install] [-NoCompile] [-Config file]` | entry point; builds `build\hybrid\wiz8hy.dll` + `wiz8hy_hooks.txt` |
 | `build_hybrid.py`, `coff.py` | the build itself: compile, rewrite COFF objects to bind to original addresses, link |
-| `transplant_wide.json` | **the release config**: units to compile and the 289 original functions to replace |
+| `transplant_wide.json` | **the release config**: units to compile and the 290 original functions to replace |
 | `try_hybrid.ps1` | start the original exe in `games\work` with the hybrid, optionally load a save, print logs |
 | `hy_screens.ps1`, `hy_play.ps1` | screenshots / mouse helpers for the hybrid driven through the in-game test stand |
 | `stack_retail.ps1`, `symbolize.py` | dump and symbolize the main-thread stack of a hung game (original + `wiz8hy.map`) |
@@ -37,6 +37,21 @@ Most scripts print usage in their header comment.
 `shot.ps1`, `win_shot.ps1` (screenshots), `boost_shot.ps1` (brighten to see seams),
 `modewatch.ps1` (prints display-mode changes), `frame_delta.ps1` (frame time from memory).
 See [docs/testing.md](../docs/testing.md).
+
+## linux/ — Linux / Proton bench (Docker)
+
+An isolated bench that runs the game under Ubuntu's Wine 9.0 or GE-Proton10-25 in a throw-away
+container (with `-Show`, a throw-away WSL2 distro with the game in a window): fresh prefix and
+game copy every run, game and package mounted read-only, no network.
+See [docs/testing.md](../docs/testing.md), "Linux / Proton bench".
+
+| File | What |
+|---|---|
+| `linux_bench.ps1 [-Runner proton\|wine] [-Overrides '...'\|none] [-Install files\|setup\|none] [-Desktop WxH\|none[:WxH]] [-Then '...'] [-Uninstall] [-GlobalOverride NAME=ORDER] [-SetupPrefix same\|other] [-Launcher none\|shortcut\|heroic\|lutris] [-Ini Section.Key=Value] [-Actions file] [-Zip file] [-Gpu] [-Show [-Hold]] [-Rebuild]` | entry point on Windows (Docker Desktop): builds the image when needed, runs one bench in a new `build\tmp\linux-bench\<time>-...\` folder, prints `summary.txt`; `-Then` adds one more start of the game in the same prefix (each with its own `WINEDLLOVERRIDES`), `-Uninstall` runs the installer's uninstall at the end and compares the game copy, `-SetupPrefix other` runs the installer in a second prefix, `-Launcher` lays out a Steam shortcut, Heroic or Lutris home for the installer to find, `-Ini` sets keys in the game copy's ini files (testing.md, "Options for the Linux features of 1.0.3"); `-Gpu` draws on the Windows GPU (Proton, WoW64); `-Show` runs it in a throw-away WSL2 distro instead, with the game in a window on the desktop |
+| `bench.sh` | the container's entry point: copies the game (into a launcher's fake home with `--launcher`), installs the patch (files or the installer, in the game's prefix or a second one), starts the game once or more in a Wine virtual desktop or on the bare X screen (on Xvfb, or in an Xephyr window with `-Show`), screenshots, actions, collects logs, the patch's registry keys and `summary.txt`, and with `--uninstall` uninstalls and compares the game copy |
+| `sandbox.sh`, `wsl.conf` | the WSL sandbox of `-Show`: mounts only the three folders, then runs `bench.sh` without network as the bench user; `wsl.conf` turns off the Windows drives and Windows programs in the distro |
+| `Dockerfile` | the image: Ubuntu 24.04, Wine, GE-Proton (fixed SHA-256), Xvfb, Xephyr, xdotool, Mesa (software drivers, d3d12 for `-Gpu`, glxinfo) |
+| `bake.sh` | makes the clean Wine and Proton prefixes inside the image (run once by the Dockerfile) |
 
 ## art/ — wide art (`.STI` files in `assets\`)
 
@@ -52,7 +67,7 @@ See [docs/testing.md](../docs/testing.md).
 The wide loading screens, menu and credits backgrounds of 1.0.0 were redrawn with an
 external image service and approved by eye; those one-off scripts were removed after the
 release (they are in git history at tag `1.0.0`). The same goes for the art of the
-experimental Options category and the animated menu video of 1.0.2 (drawn by Astra, fitted
+experimental Options category and the animated menu video of 1.0.2 (made with generative AI, fitted
 into the game's `.STI` files by one-off scripts; see [docs/experimental.md](../docs/experimental.md)).
 
 ## tools/ — analysis and game-format utilities

@@ -1,6 +1,6 @@
 # Function addresses (GOG Wiz8.exe, SHA-256 18A74FF6…20D2)
 
-> The addresses in the original Wiz8.exe (GOG/Steam 1.2.4) are current. The "Phase 4" section describes the hooks of the old `version.dll` patch, not the hybrid; the addresses of the hybrid's 289 functions (1.0.2) are in `scripts\hybrid\transplant_wide.json`.
+> The addresses in the original Wiz8.exe (GOG/Steam 1.2.4) are current. The section "Centered 4:3 interface and Hor+" describes the hook points of the loader's older stand-alone hooks (`version.dll` with `[Hybrid] Enabled=0`), not the hybrid; the addresses of the hybrid's 290 functions (1.0.3) are in `scripts\hybrid\transplant_wide.json`.
 
 Source of names: the public decompilation https://github.com/agluszak/wizardry-8-decomp (locally `ref\wizardry-8-decomp`, commit 075cbd0 of 2026-10-10; it has no LICENSE — we do not copy code, only addresses and logic).
 
@@ -63,7 +63,7 @@ Source: ultracode analysis of 2026-10-11, full data in `docs/history/phase2-stat
 | 0x00421F70 | LockPrimarySurface | hud2d | `8B 0D A8 96 65 00 83 EC` | yes | Locks the 640x480 sysmem canvas surface and returns pixels and pitch. SGP FRAME_BUFFER locks resolve here, which proves that all full-screen 2D screens draw into the canvas. |
 | 0x00422050 | SuspendVideoManager | window | `a01097650084c07453e8d28` | yes | Focus-loss handler: pauses the world, closes the GERD window, saves the window rect if windowed, minimizes the window, frees the cursor clip. |
 | 0x004220B0 | RestoreVideoManager | window | `a01097650084c07403b001c` | yes | Focus-gain handler: ShowWindow(SW_RESTORE), reopens the renderer through OpenRendererWindow if needed, OpenIcon, SetFocus, invalidates the whole screen. |
-| 0x00422240 | InitializeVideoDevice | window | `6aff684c3d5e0064a100000` | yes | Reads 3DVideo.CFG (path in buffer 0x603C70, settable with /VIDEOCFG). Lines: device name, width, height, depth, sound provider. Then srInit, srConfig.set for DD_DIRECTX7/6, loadDevice('srDD_'+name), createContext(ghWindow), then OpenRendererWindow. |
+| 0x00422240 | InitializeVideoDevice | window | `6aff684c3d5e0064a100000` | yes | Reads 3DVideo.CFG (path in buffer 0x603C70, settable with /VIDEOCFG). Lines: device name, width, height, depth, sound provider. Then srInit, srConfig.set for DD_DIRECTX7/6, loadDevice('srDD_'+name), createContext(ghWindow), then OpenRendererWindow. The hybrid replaces it (its own message when the render driver does not start). |
 | 0x00422550 | VideoResizeWindow | window | `a0393c60005333db3ac30f8` | yes | WM_SIZE/SIZE_RESTORED handler. Windowed only: closes the GERD window and reopens it at the new client size, then resets dirty tiles and transient scenes. |
 | 0x00422800 | OpenRendererWindow | window | `51a0393c600084c0566a000` | yes | Applies the window style and size, then opens the SurRender output. Fullscreen: style WS_POPUP/WS_VISIBLE, SetWindowPos 0,0,SM_CX,SM_CY, getDisplayMode(cfg w,h,d), openWindow(mode) (mode switch). Windowed: style 0x10CE0000, SetWindowPos to g_window_rect, openWindow() (client-rect size). |
 | 0x00422970 | VideoFullScreen | window | `8a442404a2393c6000a1cc9` | yes | Sets g_fullscreen from its byte argument. If the window, GERD and an open window exist: closeWindow(1), then tail-jump to OpenRendererWindow. |
@@ -127,7 +127,7 @@ Source: ultracode analysis of 2026-10-11, full data in `docs/history/phase2-stat
 | srDD_DirectX7.dll+0x84E0 (VA 0x100084E0) | srDD windowed open (srDD_DirectX7 internal method) | bink | `64 a1 00 00 00 00 6a ff` | yes | srDD device method for windowed output: normal cooperative level, clipped primary plus an offscreen 3D render target of w x h. No mode change. |
 | sr.dll+0x1A1F0 (VA 0x1001A1F0; Wiz8 IAT slot 0x5EBA68) | sr.dll srGERD::openWindow(long) | bink | `83 ec 14 56 57 8b f9 f6` | yes | Opens a display mode by index. If mode < 0 it forwards to openWindow() (windowed, sized to the window client area). |
 
-## Phase 4 — hook points (verified by bytes while building the hooks, not yet verified live)
+## Centered 4:3 interface and Hor+ — hook points of the loader's older hooks (verified by bytes while building the hooks, not verified live)
 
 | Address | What | Check bytes | How verified |
 |---|---|---|---|
@@ -142,3 +142,80 @@ Source: ultracode analysis of 2026-10-11, full data in `docs/history/phase2-stat
 | sr.dll 0x10020D30 | srGERD::clear(srFlags const&), thiscall, retn 4 | — | flags are a DWORD passed by pointer: 1 colour, 2 depth, 8 stencil; applies the pending viewport before clearing |
 
 Who loads our version.dll: VERSION.dll is imported by **sr.dll** (GetFileVersionInfoA/SizeA, VerQueryValueA), Wiz8.exe does not import it (llvm-objdump -p, 2026-10-11). So our DllMain runs before sr.dll's own DllMain: from it we can only read sr.dll's export addresses; calling its functions in DllMain is not allowed.
+
+## srDD_D3D11 extensions (`src/hooks_w8x.cpp`, `[D3D11] Extensions=1`)
+
+With `[D3D11] Extensions=1` in `wiz8ws.ini` (the default) the patch's loader, `version.dll`, is
+a client of the render driver's extension interface (ABI 1.0,
+`drivers/srdd_d3d11/include/w8x.h`). It gives the driver, for the driver's other clients, three
+things that only sr.dll's code knows: the view matrix of the world's camera, the moment the
+opaque world is drawn, and which textures are the game's water. What those clients get is
+described in the driver's [extensions.md](../drivers/srdd_d3d11/docs/extensions.md), "The
+widescreen patch as a client".
+
+The functions of sr.dll this rests on, with their addresses in the build the hooks are written
+for (checked against the disassembly and the decompilation's `src/surrender`):
+
+| Address | What | Check bytes | How verified |
+|---|---|---|---|
+| sr.dll 0x10047E50 | srCamera::processPush(srGERD*), thiscall, retn 4 | `55 8b ec 83 e4 f8 81 ec 5c 01` | getWorldSpaceMatrix(srMatrix4T<double>&) 0x10054D70, Inverse (adjugate 0x10049780, determinant 0x10049620), then `fchs` on the four doubles of row 2 (view+0x40..+0x58), loadMatrix(MODELVIEW); decomp `camera.cpp` |
+| sr.dll 0x10019AD0 | srGERD::flushSort(), thiscall | `6a ff 68 68 10 07 10 64 a1 00` | only caller srGERD::flushRenderers 0x10019A40 (from endFrame 0x1001A810), right after flushImmediateRenderers 0x10019B60; flushes the renderers with +0xD8 == 1 (sorting) through 0x100266E0 |
+| sr.dll 0x10029400 | srGERD::changeTexture(srTextureIFace*, ulong stage, int apply), thiscall, retn 0xC | `83 ec 08 53 55 56 8b f1 f6 46` | bindTexture(stage, found->device) on a change; decomp `gerd.cpp` |
+| sr.dll 0x10011790 | srRuntimeClass::getName() const | — | the name set by the game's texture loaders (`materials.cpp`: the .ifl or the file name) |
+
+`InstallW8xHooks`, called from the loader's DllMain, hooks the first three with MinHook at the
+exports themselves: sr.dll calls `flushSort` and `changeTexture` itself, so a hook on the game's
+import slots would not see them. `getName` and `srNode::getWorldSpaceMatrix` (0x10054D70) are
+only called. All five are found by their export names, not by these addresses.
+
+* The hooks are made only when sr.dll is that build: the TimeDateStamp of its PE header is
+  `0x39C4CD90` (`W8X_SR_BUILD`). They are made all three or none: none is enabled before all
+  three exist, and when one fails the ones made before it are removed.
+* `wiz8ws.log` says what happened in its line `w8x (srDD_D3D11 extensions): ...`: `sr.dll hooks
+  installed`; `sr.dll hooks not installed: sr.dll is another build (time stamp 0x<its
+  TimeDateStamp>)`; `off ([D3D11] Extensions=0)`; and `sr.dll hooks FAILED` in every other case:
+  sr.dll lacks one of the five exports, a hook could not be made, or the loader left out all
+  its game hooks (the `game signature` line then reads `MISMATCH (game hooks skipped)`).
+* What the patch and the driver package's bridge add-on (`drivers/srdd_d3d11/addons/w8x_bridge`,
+  which gives the same three things without the patch) must have alike is in one header,
+  `drivers/srdd_d3d11/sdk/w8x_sr.h`: the build of sr.dll, the export names, the view matrix,
+  the names of the water textures and the draws that get the tag.
+
+The driver is looked for at a push of the world's camera: the loaded module that exports
+`W8xGetApi` (`w8x_find_api`), asked for ABI major 1. The loader registers there as the client
+`wiz8-widescreen`, and `wiz8ws.log` gets `w8x: render driver with extension API <major>.<minor>:
+camera.view, OPAQUE_DONE and the water tag (<tag>) on` with the driver's ABI numbers. While no
+such module is loaded (the game runs with another render driver) the search is repeated once
+in 256 pushes and the hooks only pass the calls on. A driver that refuses is not asked again:
+one whose own `Extensions=0` is set or whose ABI major is another (`w8x: the render driver's
+extension API is off or not ABI 1 (<result>): not used` in the log), or one that does not
+register the client. sr.dll frees the driver's DLL together with its renderer: the driver says
+so with its last event, `DRIVER_CLOSING`, after which the hooks use nothing of it (`w8x: the
+render driver went away`) and look for the next driver as before. Outside the driver's
+callbacks they also check that its module is still loaded before each use.
+
+* **`camera.view`** (`HookProcessPush`). At each `processPush` of the world's camera (the
+  `srCamera*` at +0x44 of the `W8World*` at 0x00659AB4, `game_gog124.h`) the patch publishes the
+  key `camera.view` on the driver's board: 16 floats, row-major, the view matrix sr.dll loads
+  for that camera, which is the inverse of the camera's world matrix (`getWorldSpaceMatrix`)
+  with its z row negated (`w8x_sr_view`). The game draws its other scenes with cameras of
+  their own; their pushes are passed on and nothing is published for them.
+* **`OPAQUE_DONE`** (`HookFlushSort`). `srGERD::flushRenderers` flushes the immediate renderers
+  (the opaque part of a scene) and then calls `flushSort` for the sorting ones (its transparent
+  batch), so the start of `flushSort` is the moment the opaque part is drawn and nothing
+  transparent is. The game's RenderScene (0x00427850) ends each of its scenes with
+  `flushRenderers`, so `flushSort` runs about seven times a frame (the sky's world, the world,
+  the full-screen scene, overlay0, the user scene, the square scene, the cursor). After a push
+  of the world's camera the patch marks the point (`mark_point`) once, at the next `flushSort`
+  of the renderer (`srGERD`) that push went to; a `flushSort` of another renderer, or one with
+  no such push before it, marks nothing.
+* **The tag `water`** (`HookChangeTexture`). After sr.dll's own `changeTexture` for stage 0 the
+  patch reads the texture's name (`getName`) and compares it with the names of the game's water
+  textures (`w8x_sr_is_water`). The bind of a water texture subscribes the patch to the driver's
+  `DRAW` event, ahead of the other clients (order -1000), so that they see the tag. The first
+  draw that samples stage 0 (`w8x_sr_stage0_draw`: bit 15 of sr.dll's shader word, with a
+  texture at stage 0) names the driver's texture. Unless that draw has a tag already, the
+  texture gets the patch's tag `water` (allocated with `W8X_TAG_TRANS_Z`; `tag_texture`, which
+  the texture keeps) and so does the draw (`set_draw_tag`). That draw ends the subscription,
+  and so does the bind of a texture that is not water at stage 0: `DRAW` reaches the patch only
+  between the bind of a water texture and the first draw that samples it.

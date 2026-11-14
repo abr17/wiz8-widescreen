@@ -1,3 +1,5 @@
-# Patches to the decompilation contain lines with CRLF (the decompilation sources use CRLF):
-# git must not change their line endings, otherwise git apply fails.
-patches/*.patch -text
+# What a player opens in a text editor (the READMEs and the two ini files of the package) is
+# checked out with CRLF on every system: scripts\build\make-hybrid-package.ps1 copies the working
+# files as they are, and Notepad before Windows 10 1809 shows a file with LF only as one line.
+dist/*.txt text eol=crlf
+dist/*.ini text eol=crlf

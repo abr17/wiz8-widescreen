@@ -9,6 +9,10 @@
 // "trampoline" — a tiny function consisting of one `jmp` instruction to the real
 // address. JS analogy: `export const f = (...a) => real.f(...a)`, except without
 // copying the arguments — we just transfer control, the stack stays as it was.
+//
+// If the system DLL or one of its functions is missing (under Wine with version=n instead of
+// version=n,b, see docs/loader.md), that function reports failure instead of jumping to
+// address 0, so the game keeps running and the log says why.
 
 #include <windows.h>
 
@@ -30,26 +34,75 @@ static const int kCount = sizeof(kNames) / sizeof(kNames[0]);
 extern "C" FARPROC g_real[17];
 FARPROC g_real[17];
 
-static HMODULE g_realModule;
-
-bool ProxyVersionLoad()
+// Failure stubs, used when the real function is missing. WINAPI functions remove their own
+// arguments from the stack, so each stub takes as many as the function it stands for. They
+// return what that function returns on failure: 0 (FALSE, size 0, no text) for most;
+// VerFindFile and VerInstallFile return a mask of problems, where 0 would mean success.
+static DWORD WINAPI Fail2(DWORD, DWORD) { SetLastError(ERROR_MOD_NOT_FOUND); return 0; }
+static DWORD WINAPI Fail3(DWORD, DWORD, DWORD) { SetLastError(ERROR_MOD_NOT_FOUND); return 0; }
+static DWORD WINAPI Fail4(DWORD, DWORD, DWORD, DWORD) { SetLastError(ERROR_MOD_NOT_FOUND); return 0; }
+static DWORD WINAPI Fail5(DWORD, DWORD, DWORD, DWORD, DWORD)
 {
-    // In a 32-bit process on 64-bit Windows, GetSystemDirectory returns
-    // System32, but Windows itself redirects the path to SysWOW64 (32-bit DLLs).
-    char path[MAX_PATH];
-    UINT n = GetSystemDirectoryA(path, MAX_PATH);
-    if (n == 0 || n + 13 >= MAX_PATH) {
-        return false;
-    }
-    lstrcatA(path, "\\version.dll");
-    g_realModule = LoadLibraryA(path);
-    if (!g_realModule) {
-        return false;
+    SetLastError(ERROR_MOD_NOT_FOUND);
+    return 0;
+}
+static DWORD WINAPI FailFind(DWORD, DWORD, DWORD, DWORD, DWORD, DWORD, DWORD, DWORD)
+{
+    SetLastError(ERROR_MOD_NOT_FOUND);
+    return VFF_BUFFTOOSMALL;  // the output buffers were not filled
+}
+static DWORD WINAPI FailInstall(DWORD, DWORD, DWORD, DWORD, DWORD, DWORD, DWORD, DWORD)
+{
+    SetLastError(ERROR_MOD_NOT_FOUND);
+    return VIF_CANNOTREADSRC;
+}
+
+// In the order of kNames. GetFileVersionInfoByHandle has no documented signature (and Wine
+// does not have it): no stub, it stays empty as before. Stored as void* (the compiler warns about
+// a direct cast between function types that differ; the jmp does not care).
+static void* const kFail[] = {
+    (void*)Fail4,       nullptr,         (void*)Fail5,       (void*)Fail5,
+    (void*)Fail2,       (void*)Fail3,    (void*)Fail3,       (void*)Fail2,
+    (void*)Fail4,       (void*)FailFind, (void*)FailFind,    (void*)FailInstall,
+    (void*)FailInstall, (void*)Fail3,    (void*)Fail3,       (void*)Fail4,
+    (void*)Fail4,
+};
+static_assert(sizeof(kFail) / sizeof(kFail[0]) == sizeof(kNames) / sizeof(kNames[0]),
+              "one entry per function");
+
+static HMODULE g_realModule;
+static DWORD g_loadError;
+
+DWORD ProxyVersionError()
+{
+    return g_loadError;
+}
+
+bool ProxyVersionLoad(bool load)
+{
+    // As binkw32.dll (load = false) nothing is loaded: the stubs below fill every slot.
+    if (load) {
+        // In a 32-bit process on 64-bit Windows, GetSystemDirectory returns
+        // System32, but Windows itself redirects the path to SysWOW64 (32-bit DLLs).
+        char path[MAX_PATH];
+        UINT n = GetSystemDirectoryA(path, MAX_PATH);
+        if (n == 0 || n + 13 >= MAX_PATH) {
+            g_loadError = n ? ERROR_FILENAME_EXCED_RANGE : GetLastError();
+        } else {
+            lstrcatA(path, "\\version.dll");
+            g_realModule = LoadLibraryA(path);
+            if (!g_realModule) {
+                g_loadError = GetLastError();
+            }
+        }
     }
     for (int i = 0; i < kCount; ++i) {
-        g_real[i] = GetProcAddress(g_realModule, kNames[i]);
+        g_real[i] = g_realModule ? GetProcAddress(g_realModule, kNames[i]) : nullptr;
+        if (!g_real[i]) {
+            g_real[i] = (FARPROC)kFail[i];
+        }
     }
-    return true;
+    return g_realModule != nullptr;
 }
 
 // Trampoline: a function without prologue/epilogue (naked) that does

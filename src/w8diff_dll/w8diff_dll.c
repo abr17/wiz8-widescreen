@@ -1,8 +1,8 @@
 /* w8diff.dll: the differential harness core for the retail Wiz8.exe.
-   version.dll loads it when wiz8ws.ini has [Debug] DiffHarness=1 and calls
-   W8DiffRetailPoll from its RenderFrame hook on the game thread. The core is
-   the same file the rebuilt Wiz8Runtime.exe compiles
-   (decomp/src/w8diff/w8diff_core.c). */
+   version.dll loads it when wiz8ws.ini has [Debug] DiffHarness=1 and
+   [Hybrid] Enabled=0, and calls W8DiffRetailPoll from its RenderFrame hook
+   on the game thread. The core is the same file the rebuilt
+   Wiz8Runtime.exe compiles (decomp/src/w8diff/w8diff_core.c). */
 #include <windows.h>
 #include <string.h>
 

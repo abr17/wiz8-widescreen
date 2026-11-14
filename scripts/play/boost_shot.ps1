@@ -1,4 +1,4 @@
-# Game screenshot with boosted brightness (like the owner "cranking up gamma") - to find seams.
+# Game screenshot with boosted brightness (like a player "cranking up gamma") - to find seams.
 #   pwsh -File scripts\play\boost_shot.ps1 <shot.jpg> <out.png> [-Gamma 0.45] [-Width 1280] [-Crop "x,y,w,h"]
 param([string]$In, [string]$Out, [double]$Gamma = 0.45, [int]$Width = 1280, [string]$Crop = '')
 Add-Type -AssemblyName System.Drawing

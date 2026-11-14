@@ -6,7 +6,8 @@ import os
 import re
 import sys
 
-BASE = r'C:\dev\wiz8-ws\decomp\src\wiz8'
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+BASE = os.path.join(ROOT, 'decomp', 'src', 'wiz8')
 pat = re.compile(r'^//\s*FUNCTION:\s*WIZ8\s+(0x[0-9a-fA-F]+)')
 max_lines = int(sys.argv[1])
 chunks = []
